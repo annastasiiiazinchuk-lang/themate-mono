@@ -83,7 +83,7 @@ export const SHOPIFY_SCOPES = 'read_orders,write_orders,write_order_edits,read_p
 export const SHOPIFY_API_VERSION = '2026-01';
 
 export function normalizeShopDomain(value: string): string {
-  return value.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
 export function normalizeBaseUrl(value: string): string {
