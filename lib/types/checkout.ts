@@ -7,7 +7,7 @@ const requiredEmail = z.string().trim()
 
 export const checkoutPayloadSchema = z.object({
   locale: z.string().optional(),
-  payment_type: z.enum(['full', 'prepayment', 'installments']).default('full'),
+  payment_type: z.enum(['full', 'no_prepayment', 'prepayment', 'installments']).default('full'),
   installments_parts_count: stringish,
   amount: stringish,
   cart_total: stringish,
@@ -57,7 +57,7 @@ export const checkoutPayloadSchema = z.object({
 
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;
 
-export type PaymentType = 'full' | 'prepayment' | 'installments';
+export type PaymentType = 'full' | 'no_prepayment' | 'prepayment' | 'installments';
 
 export interface StoredPaymentMetadata {
   shopifyOrderId: number;

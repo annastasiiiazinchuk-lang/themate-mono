@@ -157,7 +157,7 @@ export async function handleNovaPoshtaDebugPage(): Promise<Response> {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; color: #1f2933; }
     input, button { width: 100%; font-size: 18px; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccd4dd; }
-    button { background: #3B6D11; color: #fff; border: 0; font-weight: 700; }
+    button { background: #2f8a7d; color: #fff; border: 0; font-weight: 700; }
     pre { white-space: pre-wrap; background: #f6f8fa; padding: 12px; border-radius: 10px; font-size: 14px; }
     .item { padding: 10px; border-bottom: 1px solid #eee; }
   </style>

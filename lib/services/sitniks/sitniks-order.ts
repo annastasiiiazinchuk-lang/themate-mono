@@ -128,8 +128,9 @@ function formatSitniksAmount(amount: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
 }
 
-function normalizePaymentKind(paymentType: unknown): 'full' | 'prepayment' | 'installments' {
+function normalizePaymentKind(paymentType: unknown): 'full' | 'no_prepayment' | 'prepayment' | 'installments' {
   const value = asString(paymentType);
+  if (value === 'no_prepayment') return 'no_prepayment';
   if (value === 'prepayment') return 'prepayment';
   if (value === 'installments') return 'installments';
   return 'full';
@@ -137,6 +138,7 @@ function normalizePaymentKind(paymentType: unknown): 'full' | 'prepayment' | 'in
 
 function getSitniksPaymentLabel(paymentType: unknown): string {
   const kind = normalizePaymentKind(paymentType);
+  if (kind === 'no_prepayment') return 'Без передплати';
   if (kind === 'prepayment') return 'Передплата 300 грн';
   if (kind === 'installments') return 'Покупка Частинами monobank';
   return 'Повна оплата';
@@ -144,6 +146,7 @@ function getSitniksPaymentLabel(paymentType: unknown): string {
 
 function getCrmPaymentLabel(paymentType: unknown, paid = false): string {
   const kind = normalizePaymentKind(paymentType);
+  if (kind === 'no_prepayment') return 'Без передплати';
   if (kind === 'prepayment') return paid ? 'Передплата Monobank' : 'Накладений платіж';
   if (kind === 'installments') return 'Покупка частинами Monobank';
   return 'Monobank';
@@ -151,6 +154,7 @@ function getCrmPaymentLabel(paymentType: unknown, paid = false): string {
 
 function getPaymentTag(paymentType: unknown, paid: boolean): string {
   const kind = normalizePaymentKind(paymentType);
+  if (kind === 'no_prepayment') return 'no_prepayment';
   if (kind === 'prepayment') return paid ? 'prepayment_300_paid' : 'prepayment_300_unpaid';
   if (kind === 'installments') return paid ? 'monobank_parts_paid' : 'monobank_parts_unpaid';
   return paid ? 'full_payment_paid' : 'full_payment_unpaid';
@@ -373,6 +377,8 @@ export function buildSitniksPayment(body: CheckoutPayload) {
 
   const cartTotal = getCartTotal(body);
   const paymentAmount = getPaymentAmount(body);
+  if (paymentAmount <= 0) return null;
+
   const paymentType = getSitniksPaymentLabel(body.payment_type);
   const balance = Math.max(0, cartTotal - paymentAmount);
 

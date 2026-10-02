@@ -256,6 +256,27 @@ describe('Shopify order mapping', () => {
     expect(getPaymentAmount({ ...basePayload, payment_type: 'installments' })).toBe(1200);
   });
 
+  test('no-prepayment order starts pending without online paid amount', () => {
+    const noPrepaymentPayload = { ...basePayload, payment_type: 'no_prepayment' as const, amount: 0 };
+    const payload = buildShopifyOrderPayload(noPrepaymentPayload, getPaymentAmount(noPrepaymentPayload));
+
+    expect(getPaymentAmount(noPrepaymentPayload)).toBe(0);
+    expect(payload.order.financial_status).toBe('pending');
+    expect(payload.order.tags).toBe('no_prepayment');
+    expect(String(payload.order.note)).toContain('Payment: Без передплати');
+    expect(String(payload.order.note)).toContain('Сума: 1200');
+    expect(String(payload.order.note)).toContain('Сплата: 0');
+    expect(String(payload.order.note)).toContain('Тег оплати: no_prepayment');
+    expect(payload.order.note_attributes).toEqual(expect.arrayContaining([
+      { name: 'payment_type', value: 'no_prepayment' },
+      { name: 'payment_status', value: 'unpaid' },
+      { name: 'Payment', value: 'Без передплати' },
+      { name: 'Payment tag', value: 'no_prepayment' },
+      { name: 'payment_tag', value: 'no_prepayment' },
+      { name: 'Cash on delivery', value: 'true' },
+    ]));
+  });
+
   test('prepayment order starts pending with not_paid_300 tag and no discount before payment', () => {
     const prepaymentPayload = { ...basePayload, payment_type: 'prepayment' as const };
     const payload = buildShopifyOrderPayload(prepaymentPayload, getPaymentAmount(prepaymentPayload));

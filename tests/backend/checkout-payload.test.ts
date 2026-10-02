@@ -61,4 +61,15 @@ describe('checkout payload validation', () => {
 
     expect(parsed.customer.email).toBe('test@example.com');
   });
+
+  test('accepts no-prepayment checkout type', () => {
+    const parsed = checkoutPayloadSchema.parse({
+      ...basePayload,
+      payment_type: 'no_prepayment',
+      amount: 0,
+    });
+
+    expect(parsed.payment_type).toBe('no_prepayment');
+    expect(parsed.amount).toBe(0);
+  });
 });

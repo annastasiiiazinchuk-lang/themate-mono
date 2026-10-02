@@ -155,6 +155,26 @@ describe('Sitniks order mapping', () => {
     env.sitniksSettlementAccountId = originalSettlementAccountId;
   });
 
+  test('no-prepayment orders use CRM tags without creating zero-amount payment block', () => {
+    const originalSettlementAccountId = env.sitniksSettlementAccountId;
+    env.sitniksSettlementAccountId = 11287;
+
+    const noPrepaymentPayload = {
+      ...basePayload,
+      payment_type: 'no_prepayment' as const,
+      amount: 0,
+    };
+    const payload = buildSitniksOrderPayload(noPrepaymentPayload, { id: 126, name: '#1004' });
+
+    expect(String(payload.managerComment)).toContain('Без передплати');
+    expect(String(payload.managerComment)).toContain('Статус оплати: unpaid');
+    expect(String(payload.managerComment)).toContain('Тег оплати: no_prepayment');
+    expect(payload.payment).toBeUndefined();
+    expect(buildSitniksPayment(noPrepaymentPayload)).toBeNull();
+
+    env.sitniksSettlementAccountId = originalSettlementAccountId;
+  });
+
   test('builds Sitniks offers for stock writeoff when product map is configured', () => {
     const originalOfferMap = env.sitniksOfferMap;
     const originalWarehouseId = env.sitniksWarehouseId;

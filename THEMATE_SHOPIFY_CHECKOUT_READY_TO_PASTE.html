@@ -36,9 +36,9 @@
   #themateOrderForm input:focus,
   #themateOrderForm textarea:focus,
   #themateOrderForm select:focus {
-    border-color: #3B6D11;
+    border-color: #2f8a7d;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59,109,17,0.08);
+    box-shadow: 0 0 0 3px rgba(47,138,125,0.12);
   }
   #themateOrderForm label[for="telegram"],
   #themateOrderForm input[name="telegram"],
@@ -78,7 +78,7 @@
     margin-right: 8px;
     width: 17px !important;
     height: 17px !important;
-    accent-color: #3B6D11 !important;
+    accent-color: #2f8a7d !important;
     appearance: auto !important;
     -webkit-appearance: auto !important;
     flex-shrink: 0;
@@ -121,7 +121,7 @@
     text-align: left !important;
   }
   #themateOrderForm .payment-card:hover {
-    border-color: #97C459 !important;
+    border-color: #c8ac7e !important;
   }
   #themateOrderForm .payment-card input[type="radio"] {
     position: absolute;
@@ -154,8 +154,8 @@
     font-weight: 500 !important;
     padding: 3px 10px;
     border-radius: 20px;
-    background: #C0DD97 !important;
-    color: #27500A !important;
+    background: #c8ac7e !important;
+    color: #2f8a7d !important;
     text-align: left !important;
   }
   #themateOrderForm .payment-card-save {
@@ -165,24 +165,24 @@
     font-weight: 500 !important;
     padding: 3px 10px;
     border-radius: 20px;
-    background: #EAF3DE !important;
-    color: #3B6D11 !important;
-    border: 1px solid #97C459 !important;
+    background: rgba(47,138,125,0.08) !important;
+    color: #2f8a7d !important;
+    border: 1px solid #c8ac7e !important;
     text-align: left !important;
   }
   #themateOrderForm .payment-card.active {
-    border: 2px solid #3B6D11 !important;
-    background: #EAF3DE !important;
+    border: 2px solid #2f8a7d !important;
+    background: rgba(47,138,125,0.08) !important;
   }
   #themateOrderForm .payment-card.active .payment-card-label {
-    color: #27500A !important;
+    color: #2f8a7d !important;
   }
   #themateOrderForm .payment-card.active .payment-card-desc {
-    color: #3B6D11 !important;
+    color: #2f8a7d !important;
   }
   #themateOrderForm .payment-card.active .payment-card-save {
-    background: #C0DD97 !important;
-    border-color: #97C459 !important;
+    background: #c8ac7e !important;
+    border-color: #c8ac7e !important;
   }
 
   .checkout-page-wrapper {
@@ -244,7 +244,7 @@
     display: block;
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #3B6D11 0%, #5a9620 100%);
+    background: linear-gradient(135deg, #2f8a7d 0%, #c8ac7e 100%);
     color: #fff !important;
     text-align: center !important;
     border: none;
@@ -296,16 +296,16 @@
   margin-right: 8px;
   width: 17px !important;
   height: 17px !important;
-  accent-color: #3B6D11 !important;
+  accent-color: #2f8a7d !important;
   appearance: auto !important;
   -webkit-appearance: auto !important;
   flex-shrink: 0;
-  color: #3B6D11 !important;
+  color: #2f8a7d !important;
 }
 
 .shipping-type input[type="radio"]:checked {
-  background-color: #3B6D11 !important;
-  border-color: #3B6D11 !important;
+  background-color: #2f8a7d !important;
+  border-color: #2f8a7d !important;
 }
   .shipping-type input[type="radio"] {
   appearance: none !important;
@@ -323,8 +323,8 @@
 }
 
 .shipping-type input[type="radio"]:checked {
-  border-color: #3B6D11 !important;
-  background: #3B6D11 !important;
+  border-color: #2f8a7d !important;
+  background: #2f8a7d !important;
   box-shadow: inset 0 0 0 3px #fff !important;
 }
 </style>
@@ -386,11 +386,11 @@
               <span class="payment-card-desc">Оплата 100% вартості онлайн</span>
               <span class="payment-card-badge">Ви економите 2%+20 грн комісії</span>
             </label>
-            <label class="payment-card" id="card-prepay">
-              <input type="radio" name="payment_type" value="prepayment" id="pay-prepay">
-              <span class="payment-card-label">Передплата 300 ₴</span>
-              <span class="payment-card-desc">Решту суми — при отриманні</span>
-              <span class="payment-card-save">Додатково 2%+20 грн комісії</span>
+            <label class="payment-card" id="card-no-prepayment">
+              <input type="radio" name="payment_type" value="no_prepayment" id="pay-no-prepayment">
+              <span class="payment-card-label">Без передплати</span>
+              <span class="payment-card-desc">Оплата при отриманні</span>
+              <span class="payment-card-save">Без онлайн-оплати зараз</span>
             </label>
           </div>
         </fieldset>
@@ -739,14 +739,14 @@ document.addEventListener('DOMContentLoaded', function () {
       comment: 'Коментар до замовлення',
       submit: 'Оформити замовлення',
       fullPayment: 'Повна оплата',
-      prepayment: 'Передплата 300 грн',
+      noPrepayment: 'Без передплати',
       paymentMethod: 'Спосіб оплати',
       fullPaymentSubtitle: 'Оплата 100% вартості онлайн',
       fullPaymentBadge: 'Ви економите 2%+20 грн комісії',
       internationalDeliveryBadge: 'Доставка за кордон узгоджується менеджером',
-      prepaymentCard: 'Передплата 300 ₴',
-      prepaymentSubtitle: 'Решту суми — при отриманні',
-      prepaymentBadge: 'Додатково 2%+20 грн комісії',
+      noPrepaymentCard: 'Без передплати',
+      noPrepaymentSubtitle: 'Оплата при отриманні',
+      noPrepaymentBadge: 'Без онлайн-оплати зараз',
       orderSummaryTitle: 'Загальна сума',
       cartItemsLabel: 'Товарів у кошику',
       totalLabel: 'Сума',
@@ -814,14 +814,14 @@ document.addEventListener('DOMContentLoaded', function () {
       comment: 'Order comment',
       submit: 'Place order',
       fullPayment: 'Full payment',
-      prepayment: 'Prepayment 300 UAH',
+      noPrepayment: 'No prepayment',
       paymentMethod: 'Payment method',
       fullPaymentSubtitle: 'Pay 100% of the order online',
       fullPaymentBadge: 'You save 2% + 20 UAH commission',
       internationalDeliveryBadge: 'International delivery is agreed with a manager',
-      prepaymentCard: 'Prepayment 300 UAH',
-      prepaymentSubtitle: 'Pay the rest on delivery',
-      prepaymentBadge: 'Additional 2% + 20 UAH commission',
+      noPrepaymentCard: 'No prepayment',
+      noPrepaymentSubtitle: 'Pay on delivery',
+      noPrepaymentBadge: 'No online payment now',
       orderSummaryTitle: 'Order summary',
       cartItemsLabel: 'Items in cart',
       totalLabel: 'Total',
@@ -902,17 +902,26 @@ document.addEventListener('DOMContentLoaded', function () {
       ['Ви економите 2%+20 грн комісії', t('fullPaymentBadge')],
       ['You save 2% + 20 UAH commission', t('fullPaymentBadge')],
       ['Oszczędzasz 2% + 20 UAH prowizji', t('fullPaymentBadge')],
-      ['Передплата 300 ₴', t('prepaymentCard')],
-      ['Передплата 300 грн', t('prepaymentCard')],
-      ['Prepayment 300 UAH', t('prepaymentCard')],
-      ['Przedpłata 300 UAH', t('prepaymentCard')],
-      ['Решту суми — при отриманні', t('prepaymentSubtitle')],
-      ['Решту суми - при отриманні', t('prepaymentSubtitle')],
-      ['Pay the rest on delivery', t('prepaymentSubtitle')],
-      ['Pozostała kwota przy odbiorze', t('prepaymentSubtitle')],
-      ['Додатково 2%+20 грн комісії', t('prepaymentBadge')],
-      ['Additional 2% + 20 UAH commission', t('prepaymentBadge')],
-      ['Dodatkowo 2% + 20 UAH prowizji', t('prepaymentBadge')],
+      ['Передплата 300 ₴', t('noPrepaymentCard')],
+      ['Передплата 300 грн', t('noPrepaymentCard')],
+      ['Prepayment 300 UAH', t('noPrepaymentCard')],
+      ['Przedpłata 300 UAH', t('noPrepaymentCard')],
+      ['Без передплати', t('noPrepaymentCard')],
+      ['No prepayment', t('noPrepaymentCard')],
+      ['Bez przedpłaty', t('noPrepaymentCard')],
+      ['Решту суми — при отриманні', t('noPrepaymentSubtitle')],
+      ['Решту суми - при отриманні', t('noPrepaymentSubtitle')],
+      ['Pay the rest on delivery', t('noPrepaymentSubtitle')],
+      ['Pozostała kwota przy odbiorze', t('noPrepaymentSubtitle')],
+      ['Оплата при отриманні', t('noPrepaymentSubtitle')],
+      ['Pay on delivery', t('noPrepaymentSubtitle')],
+      ['Płatność przy odbiorze', t('noPrepaymentSubtitle')],
+      ['Додатково 2%+20 грн комісії', t('noPrepaymentBadge')],
+      ['Additional 2% + 20 UAH commission', t('noPrepaymentBadge')],
+      ['Dodatkowo 2% + 20 UAH prowizji', t('noPrepaymentBadge')],
+      ['Без онлайн-оплати зараз', t('noPrepaymentBadge')],
+      ['No online payment now', t('noPrepaymentBadge')],
+      ['Bez płatności online teraz', t('noPrepaymentBadge')],
       ['Загальна сума', t('orderSummaryTitle')],
       ['Order summary', t('orderSummaryTitle')],
       ['Podsumowanie zamówienia', t('orderSummaryTitle')],
@@ -967,7 +976,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function normalizeNoPrepaymentOption() {
+    const legacyInput = form.querySelector('input[name="payment_type"][value="prepayment"]');
+    if (legacyInput) {
+      legacyInput.value = 'no_prepayment';
+      legacyInput.id = 'pay-no-prepayment';
+      const legacyLabel = legacyInput.closest('label');
+      if (legacyLabel) legacyLabel.id = 'card-no-prepayment';
+    }
+
+    const card = form.querySelector('input[name="payment_type"][value="no_prepayment"]')?.closest('label');
+    if (!card) return;
+
+    const title = card.querySelector('.payment-card-label');
+    const subtitle = card.querySelector('.payment-card-desc');
+    const badge = card.querySelector('.payment-card-save, .payment-card-badge');
+
+    if (title) title.textContent = t('noPrepaymentCard');
+    if (subtitle) subtitle.textContent = t('noPrepaymentSubtitle');
+    if (badge) badge.textContent = t('noPrepaymentBadge');
+
+    const legacyHidden = document.querySelector('#payment_type_hidden');
+    if (legacyHidden?.value === 'prepayment') legacyHidden.value = 'no_prepayment';
+  }
+
   function applyStaticTranslations() {
+    normalizeNoPrepaymentOption();
+
     setFieldLabel('input[name="first_name"], #first_name', 'firstName');
     setFieldLabel('input[name="last_name"], #last_name', 'lastName');
     setFieldLabel('input[name="phone"], #phone', 'phone');
@@ -979,9 +1014,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('fullPayment');
     });
 
-    const prepayment = form.querySelector('input[name="payment_type"][value="prepayment"]')?.closest('label');
-    if (prepayment) prepayment.childNodes.forEach((node) => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('prepayment');
+    const noPrepayment = form.querySelector('input[name="payment_type"][value="no_prepayment"]')?.closest('label');
+    if (noPrepayment) noPrepayment.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('noPrepayment');
     });
 
     if (submitBtn) submitBtn.textContent = t('submit');
@@ -1451,10 +1486,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const style = document.createElement('style');
     style.textContent = `
       #themateOrderForm .shipping-type {
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 12px;
         padding: 16px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
       }
       #themateOrderForm .shipping-type legend {
         font-size: 16px;
@@ -1474,8 +1509,8 @@ document.addEventListener('DOMContentLoaded', function () {
         gap: 10px;
       }
       #themateOrderForm .shipping-type label.active {
-        border-color: #97C459;
-        background: #EAF3DE;
+        border-color: #c8ac7e;
+        background: rgba(47,138,125,0.08);
       }
       .shipping-option-text {
         font-weight: 600;
@@ -1507,11 +1542,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
       .delivery-panel {
-        border: 1px solid #cfe6d9;
+        border: 1px solid rgba(47,138,125,0.24);
         border-radius: 12px;
         padding: 18px;
         margin-bottom: 24px;
-        background: #eef8f2;
+        background: rgba(47,138,125,0.10);
       }
       .delivery-panel[hidden] { display: none !important; }
       #themateOrderForm .personal-data-consent {
@@ -1520,9 +1555,9 @@ document.addEventListener('DOMContentLoaded', function () {
         gap: 10px;
         margin: 18px 0 20px !important;
         padding: 14px 16px;
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
         color: #212b36 !important;
         font-size: 14px !important;
         line-height: 1.4;
@@ -1535,7 +1570,7 @@ document.addEventListener('DOMContentLoaded', function () {
         height: 18px !important;
         margin: 1px 0 0 !important;
         flex: 0 0 auto;
-        accent-color: #3B6D11;
+        accent-color: #2f8a7d;
         appearance: auto !important;
         -webkit-appearance: auto !important;
       }
@@ -1545,9 +1580,9 @@ document.addEventListener('DOMContentLoaded', function () {
       .checkout-upsells {
         margin: 0 0 18px;
         padding: 14px;
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
       }
       .checkout-upsells[hidden] {
         display: none !important;
@@ -1608,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', function () {
         border: 0;
         border-radius: 8px;
         padding: 7px 10px;
-        background: #3B6D11;
+        background: #2f8a7d;
         color: #fff;
         font-size: 13px;
         font-weight: 600;
@@ -1644,9 +1679,9 @@ document.addEventListener('DOMContentLoaded', function () {
         pointer-events: none;
       }
       .np-type-card.active {
-        border-color: #3B6D11;
-        background: #EAF3DE;
-        color: #27500A !important;
+        border-color: #2f8a7d;
+        background: rgba(47,138,125,0.08);
+        color: #2f8a7d !important;
       }
       .delivery-row {
         display: grid;
@@ -1889,8 +1924,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function setPaymentAmount() {
-    amountField.value = getPaymentType() === 'prepayment'
-      ? PREPAYMENT_AMOUNT
+    amountField.value = getPaymentType() === 'no_prepayment'
+      ? 0
       : getCheckoutTotal();
     if (cartTotalEl) cartTotalEl.textContent = formatMoney(getCheckoutTotal());
   }
@@ -2313,7 +2348,7 @@ document.addEventListener('DOMContentLoaded', function () {
       button.type = 'button';
       button.textContent = city.name;
       button.style.border = '1px solid #dfe3e8';
-      button.style.background = '#f8faf7';
+      button.style.background = 'rgba(200,172,126,0.08)';
       button.style.color = '#212b36';
       button.style.borderRadius = '999px';
       button.style.padding = '7px 12px';
@@ -2516,7 +2551,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return {
       locale: CURRENT_LOCALE,
       payment_type: paymentType,
-      amount: paymentType === 'prepayment' ? PREPAYMENT_AMOUNT : getCheckoutTotal(),
+      amount: paymentType === 'no_prepayment' ? 0 : getCheckoutTotal(),
       cart_total: cartTotalAmount,
       cart_token: cart?.token || '',
       customer: {
@@ -2654,7 +2689,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.invoiceUrl) {
+      if (!response.ok || (!data.invoiceUrl && data.paymentFlow !== 'shopify_order')) {
         if (String(data.message || data.error || '').toLowerCase().includes('email')) {
           window.themateValidateRequiredCheckoutEmail?.();
           submitBtn.disabled = false;
@@ -2662,6 +2697,13 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
         throw new Error(data.message || data.error || t('createPaymentError'));
+      }
+
+      if (data.paymentFlow === 'shopify_order') {
+        submitBtn.textContent = t('clearingCart');
+        await clearCart();
+        window.location.assign(data.redirectUrl || shopifyRoute('/'));
+        return;
       }
 
       savePendingPaymentForPurchase(data);

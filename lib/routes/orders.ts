@@ -1,11 +1,7 @@
 import { env } from '../config/env';
 import { json } from '../http/responses';
 import { createMonobankInvoice } from '../services/monobank/monobank-invoice';
-import {
-  createMonobankPartsOrder,
-  getMonobankPartsCounts,
-  isMonobankPartsReady,
-} from '../services/monobank/monobank-parts';
+import { createMonobankPartsOrder } from '../services/monobank/monobank-parts';
 import {
   markSitniksOrderSynced,
   markSitniksOrderSyncFailed,
@@ -59,6 +55,27 @@ export async function handleCreateInvoice(request: Request): Promise<Response> {
 
   try {
     const amount = getPaymentAmount(body);
+    const isNoPrepayment = body.payment_type === 'no_prepayment';
+    if (isNoPrepayment) {
+      const shopifyOrder = await createShopifyOrder(body, amount);
+      void sendSitniksOrder(body, shopifyOrder).catch((error) => {
+        console.error('[Sitniks] Failed to send no-prepayment order:', error);
+      });
+
+      return json({
+        invoiceId: '',
+        invoiceUrl: '',
+        reference: `shopify-${shopifyOrder.id}`,
+        amount,
+        paymentType: body.payment_type,
+        paymentFlow: 'shopify_order',
+        message: 'Замовлення оформлено без передплати.',
+        redirectUrl: env.redirectUrl,
+        shopifyOrderId: shopifyOrder.id,
+        shopifyOrderName: shopifyOrder.name,
+      });
+    }
+
     const isInstallments = body.payment_type === 'installments';
     const shopifyOrder = isInstallments ? await createShopifyOrder(body, amount) : null;
     const invoice = isInstallments
@@ -129,8 +146,8 @@ export async function handleCreateInvoice(request: Request): Promise<Response> {
 export async function handlePaymentOptions(): Promise<Response> {
   return json({
     monobankParts: {
-      enabled: isMonobankPartsReady(),
-      partsCounts: getMonobankPartsCounts(),
+      enabled: false,
+      partsCounts: [],
     },
   });
 }

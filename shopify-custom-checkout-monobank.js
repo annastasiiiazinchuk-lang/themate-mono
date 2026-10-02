@@ -84,15 +84,15 @@
       comment: 'Коментар до замовлення',
       submit: 'Оформити замовлення',
       fullPayment: 'Повна оплата',
-      prepayment: 'Передплата 300 грн',
+      noPrepayment: 'Без передплати',
       installments: 'Оплата частинами',
       paymentMethod: 'Спосіб оплати',
       fullPaymentSubtitle: 'Оплата 100% вартості онлайн',
       fullPaymentBadge: 'Ви економите 2%+20 грн комісії',
       internationalDeliveryBadge: 'Доставка за кордон узгоджується менеджером',
-      prepaymentCard: 'Передплата 300 ₴',
-      prepaymentSubtitle: 'Решту суми — при отриманні',
-      prepaymentBadge: 'Додатково 2%+20 грн комісії',
+      noPrepaymentCard: 'Без передплати',
+      noPrepaymentSubtitle: 'Оплата при отриманні',
+      noPrepaymentBadge: 'Без онлайн-оплати зараз',
       installmentsCard: 'Оплата частинами',
       installmentsSubtitle: 'Підтвердження у застосунку monobank',
       installmentsBadge: 'Покупка Частинами',
@@ -166,15 +166,15 @@
       comment: 'Order comment',
       submit: 'Place order',
       fullPayment: 'Full payment',
-      prepayment: 'Prepayment 300 UAH',
+      noPrepayment: 'No prepayment',
       installments: 'Split payment',
       paymentMethod: 'Payment method',
       fullPaymentSubtitle: 'Pay 100% of the order online',
       fullPaymentBadge: 'You save 2% + 20 UAH commission',
       internationalDeliveryBadge: 'International delivery is agreed with a manager',
-      prepaymentCard: 'Prepayment 300 UAH',
-      prepaymentSubtitle: 'Pay the rest on delivery',
-      prepaymentBadge: 'Additional 2% + 20 UAH commission',
+      noPrepaymentCard: 'No prepayment',
+      noPrepaymentSubtitle: 'Pay on delivery',
+      noPrepaymentBadge: 'No online payment now',
       installmentsCard: 'Split payment',
       installmentsSubtitle: 'Confirm in the monobank app',
       installmentsBadge: 'monobank split payment',
@@ -248,15 +248,15 @@
       comment: 'Komentarz do zamówienia',
       submit: 'Złóż zamówienie',
       fullPayment: 'Pełna płatność',
-      prepayment: 'Przedpłata 300 UAH',
+      noPrepayment: 'Bez przedpłaty',
       installments: 'Płatność w częściach',
       paymentMethod: 'Sposób płatności',
       fullPaymentSubtitle: 'Zapłać 100% wartości zamówienia online',
       fullPaymentBadge: 'Oszczędzasz 2% + 20 UAH prowizji',
       internationalDeliveryBadge: 'Dostawa zagraniczna zostanie ustalona przez menedżera',
-      prepaymentCard: 'Przedpłata 300 UAH',
-      prepaymentSubtitle: 'Pozostała kwota przy odbiorze',
-      prepaymentBadge: 'Dodatkowo 2% + 20 UAH prowizji',
+      noPrepaymentCard: 'Bez przedpłaty',
+      noPrepaymentSubtitle: 'Płatność przy odbiorze',
+      noPrepaymentBadge: 'Bez płatności online teraz',
       installmentsCard: 'Płatność w częściach',
       installmentsSubtitle: 'Potwierdź w aplikacji monobank',
       installmentsBadge: 'Płatność w częściach monobank',
@@ -345,21 +345,30 @@
       ['Ви економите 2%+20 грн комісії', t('fullPaymentBadge')],
       ['You save 2% + 20 UAH commission', t('fullPaymentBadge')],
       ['Oszczędzasz 2% + 20 UAH prowizji', t('fullPaymentBadge')],
-      ['Передплата 500 ₴', t('prepaymentCard')],
-      ['Передплата 500 грн', t('prepaymentCard')],
-      ['Prepayment 500 UAH', t('prepaymentCard')],
-      ['Przedpłata 500 UAH', t('prepaymentCard')],
-      ['Передплата 300 ₴', t('prepaymentCard')],
-      ['Передплата 300 грн', t('prepaymentCard')],
-      ['Prepayment 300 UAH', t('prepaymentCard')],
-      ['Przedpłata 300 UAH', t('prepaymentCard')],
-      ['Решту суми — при отриманні', t('prepaymentSubtitle')],
-      ['Решту суми - при отриманні', t('prepaymentSubtitle')],
-      ['Pay the rest on delivery', t('prepaymentSubtitle')],
-      ['Pozostała kwota przy odbiorze', t('prepaymentSubtitle')],
-      ['Додатково 2%+20 грн комісії', t('prepaymentBadge')],
-      ['Additional 2% + 20 UAH commission', t('prepaymentBadge')],
-      ['Dodatkowo 2% + 20 UAH prowizji', t('prepaymentBadge')],
+      ['Передплата 500 ₴', t('noPrepaymentCard')],
+      ['Передплата 500 грн', t('noPrepaymentCard')],
+      ['Prepayment 500 UAH', t('noPrepaymentCard')],
+      ['Przedpłata 500 UAH', t('noPrepaymentCard')],
+      ['Передплата 300 ₴', t('noPrepaymentCard')],
+      ['Передплата 300 грн', t('noPrepaymentCard')],
+      ['Prepayment 300 UAH', t('noPrepaymentCard')],
+      ['Przedpłata 300 UAH', t('noPrepaymentCard')],
+      ['Без передплати', t('noPrepaymentCard')],
+      ['No prepayment', t('noPrepaymentCard')],
+      ['Bez przedpłaty', t('noPrepaymentCard')],
+      ['Решту суми — при отриманні', t('noPrepaymentSubtitle')],
+      ['Решту суми - при отриманні', t('noPrepaymentSubtitle')],
+      ['Pay the rest on delivery', t('noPrepaymentSubtitle')],
+      ['Pozostała kwota przy odbiorze', t('noPrepaymentSubtitle')],
+      ['Оплата при отриманні', t('noPrepaymentSubtitle')],
+      ['Pay on delivery', t('noPrepaymentSubtitle')],
+      ['Płatność przy odbiorze', t('noPrepaymentSubtitle')],
+      ['Додатково 2%+20 грн комісії', t('noPrepaymentBadge')],
+      ['Additional 2% + 20 UAH commission', t('noPrepaymentBadge')],
+      ['Dodatkowo 2% + 20 UAH prowizji', t('noPrepaymentBadge')],
+      ['Без онлайн-оплати зараз', t('noPrepaymentBadge')],
+      ['No online payment now', t('noPrepaymentBadge')],
+      ['Bez płatności online teraz', t('noPrepaymentBadge')],
       ['Підтвердження у застосунку monobank', t('installmentsSubtitle')],
       ['Confirm in the monobank app', t('installmentsSubtitle')],
       ['Potwierdź w aplikacji monobank', t('installmentsSubtitle')],
@@ -417,7 +426,25 @@
     }
   }
 
+  function normalizeNoPrepaymentOption() {
+    const legacyInput = form.querySelector('input[name="payment_type"][value="prepayment"]');
+    if (legacyInput) {
+      legacyInput.value = 'no_prepayment';
+      legacyInput.id = 'pay-no-prepayment';
+      const legacyLabel = legacyInput.closest('label');
+      if (legacyLabel) legacyLabel.id = 'card-no-prepayment';
+    }
+
+    const card = form.querySelector('input[name="payment_type"][value="no_prepayment"]')?.closest('label');
+    if (card) updatePaymentCardText(card, 'noPrepaymentCard', 'noPrepaymentSubtitle', 'noPrepaymentBadge');
+
+    const legacyHidden = document.querySelector('#payment_type_hidden');
+    if (legacyHidden?.value === 'prepayment') legacyHidden.value = 'no_prepayment';
+  }
+
   function applyStaticTranslations() {
+    normalizeNoPrepaymentOption();
+
     setFieldLabel('input[name="first_name"], #first_name', 'firstName');
     setFieldLabel('input[name="last_name"], #last_name', 'lastName');
     setFieldLabel('input[name="phone"], #phone', 'phone');
@@ -429,9 +456,9 @@
       if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('fullPayment');
     });
 
-    const prepayment = form.querySelector('input[name="payment_type"][value="prepayment"]')?.closest('label');
-    if (prepayment) prepayment.childNodes.forEach((node) => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('prepayment');
+    const noPrepayment = form.querySelector('input[name="payment_type"][value="no_prepayment"]')?.closest('label');
+    if (noPrepayment) noPrepayment.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = t('noPrepayment');
     });
 
     const installments = form.querySelector('input[name="payment_type"][value="installments"]')?.closest('label');
@@ -559,9 +586,9 @@
 
   function updatePaymentCardText(card, titleKey, subtitleKey, badgeKey) {
     if (!card) return;
-    const title = card.querySelector('.payment-card-title, [data-payment-title]');
-    const subtitle = card.querySelector('.payment-card-subtitle, [data-payment-subtitle]');
-    const badge = card.querySelector('.payment-card-badge, [data-payment-badge]');
+    const title = card.querySelector('.payment-card-title, .payment-card-label, [data-payment-title]');
+    const subtitle = card.querySelector('.payment-card-subtitle, .payment-card-desc, [data-payment-subtitle]');
+    const badge = card.querySelector('.payment-card-badge, .payment-card-save, [data-payment-badge]');
 
     if (title) title.textContent = t(titleKey);
     if (subtitle) subtitle.textContent = t(subtitleKey);
@@ -599,7 +626,8 @@
       return;
     }
 
-    const sourceInput = form.querySelector('input[name="payment_type"][value="prepayment"]')
+    const sourceInput = form.querySelector('input[name="payment_type"][value="no_prepayment"]')
+      || form.querySelector('input[name="payment_type"][value="prepayment"]')
       || form.querySelector('input[name="payment_type"][value="full"]');
     const sourceLabel = sourceInput?.closest('label');
     if (!sourceInput || !sourceLabel || !sourceLabel.parentNode) return;
@@ -950,10 +978,10 @@
     const style = document.createElement('style');
     style.textContent = `
       #customCheckoutForm .shipping-type {
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 12px;
         padding: 16px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
       }
       #customCheckoutForm .shipping-type legend {
         font-size: 16px;
@@ -973,8 +1001,8 @@
         gap: 10px;
       }
       #customCheckoutForm .shipping-type label.active {
-        border-color: #97C459;
-        background: #EAF3DE;
+        border-color: #c8ac7e;
+        background: rgba(47,138,125,0.08);
       }
       .shipping-option-text {
         font-weight: 600;
@@ -1006,11 +1034,11 @@
         }
       }
       .delivery-panel {
-        border: 1px solid #cfe6d9;
+        border: 1px solid rgba(47,138,125,0.24);
         border-radius: 12px;
         padding: 18px;
         margin-bottom: 24px;
-        background: #eef8f2;
+        background: rgba(47,138,125,0.10);
       }
       .delivery-panel[hidden] { display: none !important; }
       #customCheckoutForm .personal-data-consent {
@@ -1019,9 +1047,9 @@
         gap: 10px;
         margin: 18px 0 20px !important;
         padding: 14px 16px;
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
         color: #212b36 !important;
         font-size: 14px !important;
         line-height: 1.4;
@@ -1034,7 +1062,7 @@
         height: 18px !important;
         margin: 1px 0 0 !important;
         flex: 0 0 auto;
-        accent-color: #3B6D11;
+        accent-color: #2f8a7d;
         appearance: auto !important;
         -webkit-appearance: auto !important;
       }
@@ -1060,26 +1088,26 @@
       }
       .installment-parts-option {
         min-height: 34px;
-        border: 1px solid #97C459;
+        border: 1px solid #c8ac7e;
         border-radius: 999px;
         padding: 6px 12px;
         background: #fff;
-        color: #3B6D11;
+        color: #2f8a7d;
         font: inherit;
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
       }
       .installment-parts-option.active {
-        background: #C7E89A;
-        color: #27500A;
+        background: #c8ac7e;
+        color: #2f8a7d;
       }
       .checkout-upsells {
         margin: 0 0 18px;
         padding: 14px;
-        border: 1px solid #e2eee7;
+        border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: #f8faf7;
+        background: rgba(200,172,126,0.08);
       }
       .checkout-upsells[hidden] {
         display: none !important;
@@ -1140,7 +1168,7 @@
         border: 0;
         border-radius: 8px;
         padding: 7px 10px;
-        background: #3B6D11;
+        background: #2f8a7d;
         color: #fff;
         font-size: 13px;
         font-weight: 600;
@@ -1176,9 +1204,9 @@
         pointer-events: none;
       }
       .np-type-card.active {
-        border-color: #3B6D11;
-        background: #EAF3DE;
-        color: #27500A !important;
+        border-color: #2f8a7d;
+        background: rgba(47,138,125,0.08);
+        color: #2f8a7d !important;
       }
       .delivery-row {
         display: grid;
@@ -1421,8 +1449,8 @@
   }
 
   function setPaymentAmount() {
-    amountField.value = getPaymentType() === 'prepayment'
-      ? PREPAYMENT_AMOUNT
+    amountField.value = getPaymentType() === 'no_prepayment'
+      ? 0
       : getCheckoutTotal();
     if (cartTotalEl) cartTotalEl.textContent = formatMoney(getCheckoutTotal());
   }
@@ -1844,7 +1872,7 @@
       button.type = 'button';
       button.textContent = city.name;
       button.style.border = '1px solid #dfe3e8';
-      button.style.background = '#f8faf7';
+      button.style.background = 'rgba(200,172,126,0.08)';
       button.style.color = '#212b36';
       button.style.borderRadius = '999px';
       button.style.padding = '7px 12px';
@@ -2046,7 +2074,7 @@
       locale: CURRENT_LOCALE,
       payment_type: paymentType,
       installments_parts_count: paymentType === 'installments' ? getSelectedInstallmentPartsCount() : undefined,
-      amount: paymentType === 'prepayment' ? PREPAYMENT_AMOUNT : getCheckoutTotal(),
+      amount: paymentType === 'no_prepayment' ? 0 : getCheckoutTotal(),
       cart_total: cartTotalAmount,
       cart_token: cart?.token || '',
       customer: {
@@ -2180,8 +2208,15 @@
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || (!data.invoiceUrl && data.paymentFlow !== 'monobank_parts')) {
+      if (!response.ok || (!data.invoiceUrl && !['monobank_parts', 'shopify_order'].includes(data.paymentFlow))) {
         throw new Error(data.details || data.error || t('createPaymentError'));
+      }
+
+      if (data.paymentFlow === 'shopify_order') {
+        submitBtn.textContent = t('clearingCart');
+        await clearCart();
+        window.location.href = data.redirectUrl || shopifyRoute('/');
+        return;
       }
 
       if (data.paymentFlow === 'monobank_parts') {

@@ -186,6 +186,7 @@ export async function markPaymentSuccess(id: string, webhookPayload: unknown) {
 }
 
 function paymentKind(paymentType: unknown): PaymentType {
+  if (paymentType === 'no_prepayment') return 'no_prepayment';
   if (paymentType === 'prepayment') return 'prepayment';
   if (paymentType === 'installments') return 'installments';
   return 'full';

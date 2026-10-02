@@ -33,6 +33,7 @@ const INTERNATIONAL_DELIVERY_LABEL = 'Міжнародна доставка';
 const PAYMENT_STATUS_TAGS = new Set([
   'full_payment_unpaid',
   'full_payment_paid',
+  'no_prepayment',
   'prepayment_300_unpaid',
   'prepayment_300_paid',
   'monobank_parts_unpaid',
@@ -128,23 +129,27 @@ export function getCartTotal(body: CheckoutPayload): number {
 }
 
 export function getPaymentAmount(body: CheckoutPayload): number {
+  if (body.payment_type === 'no_prepayment') return 0;
   if (body.payment_type === 'prepayment') return PREPAYMENT_AMOUNT;
   return asNumber(body.amount) || asNumber(body.cart_total);
 }
 
 function normalizePaymentTypeForShopify(paymentType: PaymentType | CheckoutPayload['payment_type']): string {
+  if (paymentType === 'no_prepayment') return 'no_prepayment';
   if (paymentType === 'prepayment') return 'prepayment_300';
   if (paymentType === 'installments') return 'monobank_parts';
   return 'full_payment';
 }
 
 function getUnpaidPaymentTag(paymentType: PaymentType | CheckoutPayload['payment_type']): string {
+  if (paymentType === 'no_prepayment') return 'no_prepayment';
   if (paymentType === 'prepayment') return 'prepayment_300_unpaid';
   if (paymentType === 'installments') return 'monobank_parts_unpaid';
   return 'full_payment_unpaid';
 }
 
 function getPaidPaymentTag(paymentType: PaymentType | CheckoutPayload['payment_type']): string {
+  if (paymentType === 'no_prepayment') return 'no_prepayment';
   if (paymentType === 'prepayment') return 'prepayment_300_paid';
   if (paymentType === 'installments') return 'monobank_parts_paid';
   return 'full_payment_paid';
@@ -187,6 +192,7 @@ export function isInternationalCheckout(body: CheckoutPayload): boolean {
 
 function legacyPaymentLabel(body: CheckoutPayload, isInternational = false): string {
   if (isInternational) return 'Monobank';
+  if (body.payment_type === 'no_prepayment') return 'Без передплати';
   if (body.payment_type === 'prepayment') return 'Накладений платіж';
   if (body.payment_type === 'installments') return 'Покупка частинами Monobank';
   return 'Monobank';
@@ -332,7 +338,7 @@ function buildLegacyIntegrationNoteAttributes(
   const countryCode = isInternational ? getCountryCode(asString(shipping.country_code) || country) : '';
   const cityRef = asString(shipping.city_ref);
   const warehouseRef = asString(shipping.warehouse_ref);
-  const cashOnDelivery = body.payment_type === 'prepayment';
+  const cashOnDelivery = body.payment_type === 'prepayment' || body.payment_type === 'no_prepayment';
   const utm = buildLegacyUtmValue(body);
   const paymentCrmComment = buildPaymentCrmComment({
     paymentLabel: legacyPaymentLabel(body, isInternational),
@@ -681,11 +687,12 @@ export function buildOrderUpdateAfterPayment(
   const paidAmount = formatPaymentAttributeAmount(amount);
   const paymentStatus = isPrepayment ? 'partially_paid' : 'paid';
   const paidPaymentTag = getPaidPaymentTag(paymentType);
-  const paymentLabel = isPrepayment
-    ? 'Передплата Monobank'
-    : paymentType === 'installments'
-      ? 'Покупка частинами Monobank'
-      : 'Monobank';
+  const paymentLabel = (() => {
+    if (isPrepayment) return 'Передплата Monobank';
+    if (paymentType === 'no_prepayment') return 'Без передплати';
+    if (paymentType === 'installments') return 'Покупка частинами Monobank';
+    return 'Monobank';
+  })();
   const noteAttributeByName = new Map<string, string>();
 
   for (const attribute of existingNoteAttributes) {
