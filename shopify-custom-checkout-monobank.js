@@ -1576,18 +1576,18 @@
     }
   }
 
-  function restoreCheckoutDraft() {
-    if (checkoutDraftRestored || !form) return;
+  function restoreCheckoutDraft(force = false) {
+    if ((!force && checkoutDraftRestored) || !form) return false;
     checkoutDraftRestored = true;
 
     try {
       const rawDraft = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
-      if (!rawDraft) return;
+      if (!rawDraft) return false;
 
       const draft = JSON.parse(rawDraft);
       if (!draft?.savedAt || Date.now() - Number(draft.savedAt) > CHECKOUT_DRAFT_MAX_AGE_MS) {
         clearCheckoutDraft();
-        return;
+        return false;
       }
 
       const data = draft.data || {};
@@ -1617,18 +1617,25 @@
       syncDeliveryVisibility();
       syncPaymentCardState();
       setPaymentAmount();
+      return true;
     } catch (error) {
       console.warn('Checkout draft restore failed:', error);
       clearCheckoutDraft();
+      return false;
     } finally {
       isRestoringCheckoutDraft = false;
     }
   }
 
   function bindCheckoutDraftAutosave() {
-    form.addEventListener('input', scheduleCheckoutDraftSave);
-    form.addEventListener('change', scheduleCheckoutDraftSave);
+    form.addEventListener('input', scheduleCheckoutDraftSave, true);
+    form.addEventListener('change', saveCheckoutDraft, true);
+    form.addEventListener('focusout', saveCheckoutDraft, true);
     window.addEventListener('pagehide', saveCheckoutDraft);
+    window.addEventListener('beforeunload', saveCheckoutDraft);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) saveCheckoutDraft();
+    });
   }
 
   function resetCheckoutSubmitButton() {
@@ -1641,6 +1648,7 @@
   function refreshCheckoutAfterReturn() {
     restoreThemeHeader();
     resetCheckoutSubmitButton();
+    restoreCheckoutDraft(true);
     syncDeliveryVisibility();
     setPaymentAmount();
     loadCart().catch((error) => {
@@ -1874,6 +1882,7 @@
       option.addEventListener('mousedown', function (event) {
         event.preventDefault();
         onSelect(item);
+        saveCheckoutDraft();
         hideSuggestions(container);
       });
       container.appendChild(option);
@@ -2097,6 +2106,7 @@
           npWarehouseInput.disabled = false;
           npWarehouseInput.focus();
         }
+        saveCheckoutDraft();
       });
 
       popularCities.appendChild(button);
@@ -2371,6 +2381,9 @@
   setupNovaPoshtaAutocomplete();
   ensurePersonalDataConsent();
   restoreCheckoutDraft();
+  window.setTimeout(() => restoreCheckoutDraft(true), 0);
+  window.setTimeout(() => restoreCheckoutDraft(true), 250);
+  window.setTimeout(() => restoreCheckoutDraft(true), 1000);
   bindCheckoutDraftAutosave();
   restoreThemeHeader();
   window.setTimeout(restoreThemeHeader, 0);

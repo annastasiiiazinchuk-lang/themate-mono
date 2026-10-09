@@ -4,7 +4,7 @@
   * { box-sizing: border-box; }
   body, html {
     margin: 0;
-    background-color: #f2f2f3 !important;
+    background-color: #F6F4F0 !important;
   }
 
   #shopify-section-header,
@@ -211,7 +211,7 @@
     margin-left: -50vw;
     width: 100vw;
     padding: 40px 24px 80px;
-    background-color: #f2f2f3;
+    background-color: #F6F4F0;
   }
 
   .checkout-grid {
@@ -2071,18 +2071,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function restoreCheckoutDraft() {
-    if (checkoutDraftRestored || !form) return;
+  function restoreCheckoutDraft(force = false) {
+    if ((!force && checkoutDraftRestored) || !form) return false;
     checkoutDraftRestored = true;
 
     try {
       const rawDraft = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
-      if (!rawDraft) return;
+      if (!rawDraft) return false;
 
       const draft = JSON.parse(rawDraft);
       if (!draft?.savedAt || Date.now() - Number(draft.savedAt) > CHECKOUT_DRAFT_MAX_AGE_MS) {
         clearCheckoutDraft();
-        return;
+        return false;
       }
 
       const data = draft.data || {};
@@ -2112,18 +2112,25 @@ document.addEventListener('DOMContentLoaded', function () {
       syncDeliveryVisibility();
       syncPaymentCardState();
       setPaymentAmount();
+      return true;
     } catch (error) {
       console.warn('Checkout draft restore failed:', error);
       clearCheckoutDraft();
+      return false;
     } finally {
       isRestoringCheckoutDraft = false;
     }
   }
 
   function bindCheckoutDraftAutosave() {
-    form.addEventListener('input', scheduleCheckoutDraftSave);
-    form.addEventListener('change', scheduleCheckoutDraftSave);
+    form.addEventListener('input', scheduleCheckoutDraftSave, true);
+    form.addEventListener('change', saveCheckoutDraft, true);
+    form.addEventListener('focusout', saveCheckoutDraft, true);
     window.addEventListener('pagehide', saveCheckoutDraft);
+    window.addEventListener('beforeunload', saveCheckoutDraft);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) saveCheckoutDraft();
+    });
   }
 
   function resetCheckoutSubmitButton() {
@@ -2136,6 +2143,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function refreshCheckoutAfterReturn() {
     restoreThemeHeader();
     resetCheckoutSubmitButton();
+    restoreCheckoutDraft(true);
     syncDeliveryVisibility();
     setPaymentAmount();
     loadCart().catch((error) => {
@@ -2370,6 +2378,7 @@ document.addEventListener('DOMContentLoaded', function () {
       option.addEventListener('mousedown', function (event) {
         event.preventDefault();
         onSelect(item);
+        saveCheckoutDraft();
         hideSuggestions(container);
       });
       container.appendChild(option);
@@ -2593,6 +2602,7 @@ document.addEventListener('DOMContentLoaded', function () {
           npWarehouseInput.disabled = false;
           npWarehouseInput.focus();
         }
+        saveCheckoutDraft();
       });
 
       popularCities.appendChild(button);
@@ -2868,6 +2878,9 @@ document.addEventListener('DOMContentLoaded', function () {
   setupNovaPoshtaAutocomplete();
   ensurePersonalDataConsent();
   restoreCheckoutDraft();
+  window.setTimeout(() => restoreCheckoutDraft(true), 0);
+  window.setTimeout(() => restoreCheckoutDraft(true), 250);
+  window.setTimeout(() => restoreCheckoutDraft(true), 1000);
   bindCheckoutDraftAutosave();
   restoreThemeHeader();
   window.setTimeout(restoreThemeHeader, 0);
