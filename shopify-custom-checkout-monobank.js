@@ -17,6 +17,7 @@
   const productsList = document.querySelector('#products-list');
   const cartTotalEl = document.querySelector('#cart-total');
   const cartItemsCountEl = document.querySelector('#cart-items-count');
+  const defaultSubmitButtonText = submitBtn?.textContent || '';
   const CHECKOUT_DRAFT_STORAGE_KEY = 'themate_checkout_draft_v1';
   const CHECKOUT_DRAFT_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
   const CHECKOUT_DRAFT_FIELD_NAMES = [
@@ -42,6 +43,7 @@
   let checkoutDraftSaveTimer = null;
   let checkoutDraftRestored = false;
   let isRestoringCheckoutDraft = false;
+  let checkoutRequestInFlight = false;
 
   const TEXTS = {
     uk: {
@@ -1597,6 +1599,24 @@
     window.addEventListener('pagehide', saveCheckoutDraft);
   }
 
+  function resetCheckoutSubmitButton() {
+    checkoutRequestInFlight = false;
+    if (!submitBtn) return;
+    submitBtn.disabled = false;
+    submitBtn.textContent = defaultSubmitButtonText || t('submit');
+  }
+
+  function refreshCheckoutAfterReturn() {
+    resetCheckoutSubmitButton();
+    syncDeliveryVisibility();
+    setPaymentAmount();
+    loadCart().catch((error) => {
+      console.error(error);
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('cartUnavailable');
+    });
+  }
+
   function renderCartSummary() {
     if (!cart) return;
 
@@ -2308,6 +2328,11 @@
   ensurePersonalDataConsent();
   restoreCheckoutDraft();
   bindCheckoutDraftAutosave();
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted || checkoutRequestInFlight) {
+      refreshCheckoutAfterReturn();
+    }
+  });
   ensureUpsellSection();
   loadUpsells().catch((error) => {
     console.warn('Upsells load failed:', error);
@@ -2342,6 +2367,7 @@
     }
 
     const previousText = submitBtn.textContent;
+    checkoutRequestInFlight = true;
     submitBtn.disabled = true;
     submitBtn.textContent = t('creatingPayment');
     saveCheckoutDraft();
@@ -2379,6 +2405,7 @@
       submitBtn.textContent = t('redirectingToPayment');
       window.location.assign(data.invoiceUrl);
     } catch (error) {
+      checkoutRequestInFlight = false;
       alert(error instanceof Error ? error.message : t('paymentCreateAlert'));
       submitBtn.disabled = false;
       submitBtn.textContent = previousText;
