@@ -1536,6 +1536,54 @@
     return field?.value || '';
   }
 
+  function writeCheckoutDraftStorage(payload) {
+    const value = JSON.stringify(payload);
+
+    try {
+      window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, value);
+    } catch (error) {
+      console.warn('Checkout draft localStorage save failed:', error);
+    }
+
+    try {
+      window.sessionStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, value);
+    } catch (error) {
+      console.warn('Checkout draft sessionStorage save failed:', error);
+    }
+
+    try {
+      const currentState = window.history.state && typeof window.history.state === 'object'
+        ? window.history.state
+        : {};
+      window.history.replaceState({
+        ...currentState,
+        themateCheckoutDraft: payload,
+      }, '', window.location.href);
+    } catch (error) {
+      console.warn('Checkout draft history save failed:', error);
+    }
+  }
+
+  function readCheckoutDraftStorage() {
+    const sources = [
+      () => window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY),
+      () => window.sessionStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY),
+      () => window.history.state?.themateCheckoutDraft || null,
+    ];
+
+    for (const read of sources) {
+      try {
+        const value = read();
+        if (!value) continue;
+        return typeof value === 'string' ? JSON.parse(value) : value;
+      } catch (error) {
+        console.warn('Checkout draft read failed:', error);
+      }
+    }
+
+    return null;
+  }
+
   function saveCheckoutDraft() {
     if (!form || isRestoringCheckoutDraft) return;
 
@@ -1553,10 +1601,10 @@
       data.selected_city_ref = selectedCityRef || '';
       data.selected_warehouse_ref = selectedWarehouseRef || '';
 
-      window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify({
+      writeCheckoutDraftStorage({
         savedAt: Date.now(),
         data,
-      }));
+      });
     } catch (error) {
       console.warn('Checkout draft save failed:', error);
     }
@@ -1574,6 +1622,21 @@
     } catch (error) {
       console.warn('Checkout draft cleanup failed:', error);
     }
+    try {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Checkout draft session cleanup failed:', error);
+    }
+    try {
+      const currentState = window.history.state && typeof window.history.state === 'object'
+        ? window.history.state
+        : {};
+      const state = { ...currentState };
+      delete state.themateCheckoutDraft;
+      window.history.replaceState(state, '', window.location.href);
+    } catch (error) {
+      console.warn('Checkout draft history cleanup failed:', error);
+    }
   }
 
   function restoreCheckoutDraft(force = false) {
@@ -1581,10 +1644,8 @@
     checkoutDraftRestored = true;
 
     try {
-      const rawDraft = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
-      if (!rawDraft) return false;
-
-      const draft = JSON.parse(rawDraft);
+      const draft = readCheckoutDraftStorage();
+      if (!draft) return false;
       if (!draft?.savedAt || Date.now() - Number(draft.savedAt) > CHECKOUT_DRAFT_MAX_AGE_MS) {
         clearCheckoutDraft();
         return false;
