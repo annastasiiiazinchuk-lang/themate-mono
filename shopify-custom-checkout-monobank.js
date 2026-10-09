@@ -44,6 +44,20 @@
   let checkoutDraftRestored = false;
   let isRestoringCheckoutDraft = false;
   let checkoutRequestInFlight = false;
+  const HEADER_RESTORE_SELECTORS = [
+    '#shopify-section-header',
+    '.shopify-section-header',
+    '.shopify-section-group-header-group',
+    'sticky-header',
+    '.header-wrapper',
+  ];
+  const HEADER_HIDDEN_CLASSES = [
+    'shopify-section-header-hidden',
+    'header-hidden',
+    'header--hidden',
+    'is-hidden',
+    'hidden',
+  ];
 
   const TEXTS = {
     uk: {
@@ -1067,6 +1081,24 @@
         background: rgba(47,138,125,0.10);
       }
       .delivery-panel[hidden] { display: none !important; }
+      #shopify-section-header,
+      .shopify-section-header,
+      .shopify-section-group-header-group,
+      sticky-header,
+      .header-wrapper {
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+      #shopify-section-header.shopify-section-header-hidden,
+      .shopify-section-header-hidden,
+      sticky-header.shopify-section-header-hidden,
+      .header-wrapper.shopify-section-header-hidden {
+        transform: none !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
       #customCheckoutForm .personal-data-consent {
         display: flex !important;
         align-items: flex-start;
@@ -1607,6 +1639,7 @@
   }
 
   function refreshCheckoutAfterReturn() {
+    restoreThemeHeader();
     resetCheckoutSubmitButton();
     syncDeliveryVisibility();
     setPaymentAmount();
@@ -1614,6 +1647,17 @@
       console.error(error);
       submitBtn.disabled = true;
       submitBtn.textContent = t('cartUnavailable');
+    });
+  }
+
+  function restoreThemeHeader() {
+    document.querySelectorAll(HEADER_RESTORE_SELECTORS.join(',')).forEach((header) => {
+      HEADER_HIDDEN_CLASSES.forEach((className) => header.classList.remove(className));
+      header.style.removeProperty('display');
+      header.style.removeProperty('visibility');
+      header.style.removeProperty('opacity');
+      header.style.removeProperty('transform');
+      header.style.removeProperty('pointer-events');
     });
   }
 
@@ -2328,7 +2372,14 @@
   ensurePersonalDataConsent();
   restoreCheckoutDraft();
   bindCheckoutDraftAutosave();
+  restoreThemeHeader();
+  window.setTimeout(restoreThemeHeader, 0);
+  window.setTimeout(restoreThemeHeader, 250);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) restoreThemeHeader();
+  });
   window.addEventListener('pageshow', function (event) {
+    restoreThemeHeader();
     if (event.persisted || checkoutRequestInFlight) {
       refreshCheckoutAfterReturn();
     }
