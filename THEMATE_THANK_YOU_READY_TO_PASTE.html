@@ -70,6 +70,8 @@
 (function () {
   const API_BASE_URL = 'https://themate-mono.onrender.com';
   const PENDING_PAYMENT_KEY = 'themate_pending_payment';
+  const CHECKOUT_DRAFT_STORAGE_KEY = 'themate_checkout_draft_v1';
+  const SHOPIFY_ROUTES_ROOT = window.Shopify?.routes?.root || '/';
   const statusEl = document.getElementById('themate-payment-status');
 
   function setStatus(message, state) {
@@ -90,6 +92,28 @@
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {}
+  }
+
+  function shopifyRoute(path) {
+    const cleanPath = String(path || '').replace(/^\/+/, '');
+    const root = SHOPIFY_ROUTES_ROOT.endsWith('/') ? SHOPIFY_ROUTES_ROOT : `${SHOPIFY_ROUTES_ROOT}/`;
+    return `${root}${cleanPath}`;
+  }
+
+  function clearCheckoutDraft() {
+    try {
+      localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    } catch {}
+  }
+
+  async function clearCart() {
+    const response = await fetch(shopifyRoute('cart/clear.js'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error(`Cart cleanup ${response.status}`);
   }
 
   function getQueryPayment() {
@@ -319,6 +343,10 @@
     if (isBrowserPurchaseEnabled()) {
       trackPurchase(status, pending);
     }
+    clearCheckoutDraft();
+    clearCart().catch((error) => {
+      console.warn('Cart cleanup after successful payment failed:', error);
+    });
     setStatus('Оплату підтверджено. Дякуємо за покупку!', 'success');
   }
 

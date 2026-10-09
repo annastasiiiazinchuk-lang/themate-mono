@@ -17,8 +17,31 @@
   const productsList = document.querySelector('#products-list');
   const cartTotalEl = document.querySelector('#cart-total');
   const cartItemsCountEl = document.querySelector('#cart-items-count');
+  const CHECKOUT_DRAFT_STORAGE_KEY = 'themate_checkout_draft_v1';
+  const CHECKOUT_DRAFT_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+  const CHECKOUT_DRAFT_FIELD_NAMES = [
+    'first_name',
+    'last_name',
+    'phone',
+    'email',
+    'comment',
+    'city',
+    'warehouse',
+    'np_street',
+    'np_house',
+    'np_apartment',
+    'country',
+    'intl_city',
+    'address',
+    'intl_apartment',
+    'postcode',
+    'warehouse_np',
+  ];
   let upsellSection = null;
   let installmentPartCounts = [2, 3, 4];
+  let checkoutDraftSaveTimer = null;
+  let checkoutDraftRestored = false;
+  let isRestoringCheckoutDraft = false;
 
   const TEXTS = {
     uk: {
@@ -511,6 +534,7 @@
 
     syncPaymentCardState();
     setPaymentAmount();
+    saveCheckoutDraft();
     return true;
   }
 
@@ -740,10 +764,10 @@
       debugPanel = document.createElement('div');
       debugPanel.style.margin = '10px 0 18px';
       debugPanel.style.padding = '10px 12px';
-      debugPanel.style.border = '1px solid #f0c36d';
+      debugPanel.style.border = '1px solid #9ccfc6';
       debugPanel.style.borderRadius = '8px';
-      debugPanel.style.background = '#fff8e5';
-      debugPanel.style.color = '#5f4700';
+      debugPanel.style.background = 'rgba(47,138,125,0.08)';
+      debugPanel.style.color = '#2f8a7d';
       debugPanel.style.fontSize = '13px';
       debugPanel.style.lineHeight = '1.4';
       debugPanel.style.whiteSpace = 'pre-wrap';
@@ -981,7 +1005,7 @@
         border: 1px solid rgba(47,138,125,0.18);
         border-radius: 12px;
         padding: 16px;
-        background: rgba(200,172,126,0.08);
+        background: rgba(47,138,125,0.06);
       }
       #customCheckoutForm .shipping-type legend {
         font-size: 16px;
@@ -1001,7 +1025,7 @@
         gap: 10px;
       }
       #customCheckoutForm .shipping-type label.active {
-        border-color: #c8ac7e;
+        border-color: #9ccfc6;
         background: rgba(47,138,125,0.08);
       }
       .shipping-option-text {
@@ -1049,7 +1073,7 @@
         padding: 14px 16px;
         border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: rgba(200,172,126,0.08);
+        background: rgba(47,138,125,0.06);
         color: #212b36 !important;
         font-size: 14px !important;
         line-height: 1.4;
@@ -1088,7 +1112,7 @@
       }
       .installment-parts-option {
         min-height: 34px;
-        border: 1px solid #c8ac7e;
+        border: 1px solid #9ccfc6;
         border-radius: 999px;
         padding: 6px 12px;
         background: #fff;
@@ -1099,7 +1123,7 @@
         cursor: pointer;
       }
       .installment-parts-option.active {
-        background: #c8ac7e;
+        background: #9ccfc6;
         color: #2f8a7d;
       }
       .checkout-upsells {
@@ -1107,7 +1131,7 @@
         padding: 14px;
         border: 1px solid rgba(47,138,125,0.18);
         border-radius: 10px;
-        background: rgba(200,172,126,0.08);
+        background: rgba(47,138,125,0.06);
       }
       .checkout-upsells[hidden] {
         display: none !important;
@@ -1453,6 +1477,124 @@
       ? 0
       : getCheckoutTotal();
     if (cartTotalEl) cartTotalEl.textContent = formatMoney(getCheckoutTotal());
+  }
+
+  function getCheckoutDraftFields(name) {
+    return Array.from(form.elements || []).filter((element) => element.name === name);
+  }
+
+  function setCheckoutDraftFieldValue(name, value) {
+    getCheckoutDraftFields(name).forEach((field) => {
+      if (field.type === 'radio') {
+        field.checked = field.value === String(value);
+      } else if (field.type === 'checkbox') {
+        field.checked = Boolean(value);
+      } else {
+        field.value = value == null ? '' : String(value);
+      }
+    });
+  }
+
+  function getCheckoutDraftFieldValue(name) {
+    const field = getCheckoutDraftFields(name).find((element) => (
+      element.type !== 'radio' && element.type !== 'checkbox'
+    ));
+    return field?.value || '';
+  }
+
+  function saveCheckoutDraft() {
+    if (!form || isRestoringCheckoutDraft) return;
+
+    try {
+      const data = CHECKOUT_DRAFT_FIELD_NAMES.reduce((draft, name) => {
+        draft[name] = getCheckoutDraftFieldValue(name);
+        return draft;
+      }, {});
+
+      data.shipping_type = form.querySelector('input[name="shipping_type"]:checked')?.value || 'ukraine';
+      data.np_delivery_type = form.querySelector('input[name="np_delivery_type"]:checked')?.value || 'branch';
+      data.payment_type = form.querySelector('input[name="payment_type"]:checked')?.value || 'full';
+      data.installments_parts_count = form.querySelector('input[name="installments_parts_count"]')?.value || '';
+      data.personal_data_consent = Boolean(form.querySelector('input[name="personal_data_consent"]')?.checked);
+      data.selected_city_ref = selectedCityRef || '';
+      data.selected_warehouse_ref = selectedWarehouseRef || '';
+
+      window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        data,
+      }));
+    } catch (error) {
+      console.warn('Checkout draft save failed:', error);
+    }
+  }
+
+  function scheduleCheckoutDraftSave() {
+    if (isRestoringCheckoutDraft) return;
+    window.clearTimeout(checkoutDraftSaveTimer);
+    checkoutDraftSaveTimer = window.setTimeout(saveCheckoutDraft, 150);
+  }
+
+  function clearCheckoutDraft() {
+    try {
+      window.localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Checkout draft cleanup failed:', error);
+    }
+  }
+
+  function restoreCheckoutDraft() {
+    if (checkoutDraftRestored || !form) return;
+    checkoutDraftRestored = true;
+
+    try {
+      const rawDraft = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      if (!rawDraft) return;
+
+      const draft = JSON.parse(rawDraft);
+      if (!draft?.savedAt || Date.now() - Number(draft.savedAt) > CHECKOUT_DRAFT_MAX_AGE_MS) {
+        clearCheckoutDraft();
+        return;
+      }
+
+      const data = draft.data || {};
+      isRestoringCheckoutDraft = true;
+
+      CHECKOUT_DRAFT_FIELD_NAMES.forEach((name) => {
+        if (Object.prototype.hasOwnProperty.call(data, name)) {
+          setCheckoutDraftFieldValue(name, data[name]);
+        }
+      });
+
+      setCheckoutDraftFieldValue('shipping_type', data.shipping_type || 'ukraine');
+      setCheckoutDraftFieldValue('np_delivery_type', data.np_delivery_type || 'branch');
+      setCheckoutDraftFieldValue('personal_data_consent', Boolean(data.personal_data_consent));
+
+      if (data.installments_parts_count) {
+        setCheckoutDraftFieldValue('installments_parts_count', data.installments_parts_count);
+      }
+
+      selectedCityRef = data.selected_city_ref || '';
+      selectedWarehouseRef = data.selected_warehouse_ref || '';
+
+      if (data.payment_type && !selectPaymentType(data.payment_type)) {
+        selectPaymentType('full');
+      }
+
+      syncDeliveryVisibility();
+      syncPaymentCardState();
+      setPaymentAmount();
+    } catch (error) {
+      console.warn('Checkout draft restore failed:', error);
+      clearCheckoutDraft();
+    } finally {
+      isRestoringCheckoutDraft = false;
+    }
+  }
+
+  function bindCheckoutDraftAutosave() {
+    form.addEventListener('input', scheduleCheckoutDraftSave);
+    form.addEventListener('change', scheduleCheckoutDraftSave);
+    window.addEventListener('pagehide', saveCheckoutDraft);
   }
 
   function renderCartSummary() {
@@ -1872,7 +2014,7 @@
       button.type = 'button';
       button.textContent = city.name;
       button.style.border = '1px solid #dfe3e8';
-      button.style.background = 'rgba(200,172,126,0.08)';
+      button.style.background = 'rgba(47,138,125,0.06)';
       button.style.color = '#212b36';
       button.style.borderRadius = '999px';
       button.style.padding = '7px 12px';
@@ -2126,6 +2268,7 @@
     input.addEventListener('change', function () {
       syncPaymentCardState();
       setPaymentAmount();
+      scheduleCheckoutDraftSave();
       trackCheckoutEvent('add_payment_info');
     });
   });
@@ -2152,6 +2295,7 @@
         selectedWarehouseRef = '';
       }
       syncDeliveryVisibility();
+      scheduleCheckoutDraftSave();
       trackCheckoutEvent('add_shipping_info');
     });
   });
@@ -2162,6 +2306,8 @@
 
   setupNovaPoshtaAutocomplete();
   ensurePersonalDataConsent();
+  restoreCheckoutDraft();
+  bindCheckoutDraftAutosave();
   ensureUpsellSection();
   loadUpsells().catch((error) => {
     console.warn('Upsells load failed:', error);
@@ -2198,6 +2344,7 @@
     const previousText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = t('creatingPayment');
+    saveCheckoutDraft();
     trackCheckoutEvent('checkout_payment_redirect_start');
 
     try {
@@ -2214,6 +2361,7 @@
 
       if (data.paymentFlow === 'shopify_order') {
         submitBtn.textContent = t('clearingCart');
+        clearCheckoutDraft();
         await clearCart();
         window.location.href = data.redirectUrl || shopifyRoute('/');
         return;
@@ -2221,6 +2369,7 @@
 
       if (data.paymentFlow === 'monobank_parts') {
         submitBtn.textContent = t('clearingCart');
+        clearCheckoutDraft();
         await clearCart();
         alert(data.message || t('installmentsRequestSent'));
         window.location.href = data.redirectUrl || shopifyRoute('/');
@@ -2228,7 +2377,6 @@
       }
 
       submitBtn.textContent = t('redirectingToPayment');
-      clearCartBeforePaymentRedirect();
       window.location.assign(data.invoiceUrl);
     } catch (error) {
       alert(error instanceof Error ? error.message : t('paymentCreateAlert'));
