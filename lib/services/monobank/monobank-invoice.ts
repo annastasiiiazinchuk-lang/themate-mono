@@ -26,6 +26,20 @@ export interface MonobankBasketOrderItem {
   uktzed: null;
 }
 
+export interface MonobankInvoiceRequestBody {
+  amount: number;
+  ccy: number;
+  merchantPaymInfo: {
+    reference: string;
+    destination: string;
+    comment: string;
+    customerEmails: string[];
+    basketOrder: MonobankBasketOrderItem[];
+  };
+  redirectUrl: string;
+  webHookUrl: string;
+}
+
 function createCheckoutReference(): string {
   return `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -95,6 +109,39 @@ export function buildMonobankBasketOrder(body: CheckoutPayload, amount: number):
   })];
 }
 
+export function getMonobankCustomerEmails(body: CheckoutPayload): string[] {
+  const email = asString(body.customer?.email).trim();
+  return email ? [email] : [];
+}
+
+export function buildMonobankInvoiceRequestBody(
+  body: CheckoutPayload,
+  shopifyOrder: { id: number; name: string } | null,
+  amount: number,
+  reference: string,
+): MonobankInvoiceRequestBody {
+  const customer = body.customer || {};
+  const customerName = `${asString(customer.first_name)} ${asString(customer.last_name)}`.trim() || 'Customer';
+  const customerPhone = asString(customer.phone);
+  const destination = shopifyOrder?.name
+    ? `Order ${shopifyOrder.name}: ${customerName}${customerPhone ? ` (${customerPhone})` : ''}`
+    : `Themate checkout: ${customerName}${customerPhone ? ` (${customerPhone})` : ''}`;
+
+  return {
+    amount: Math.round(amount * 100),
+    ccy: 980,
+    merchantPaymInfo: {
+      reference,
+      destination,
+      comment: destination,
+      customerEmails: getMonobankCustomerEmails(body),
+      basketOrder: buildMonobankBasketOrder(body, amount),
+    },
+    redirectUrl: env.redirectUrl,
+    webHookUrl: env.webhookUrl,
+  };
+}
+
 export async function createMonobankInvoice(
   body: CheckoutPayload,
   shopifyOrder: { id: number; name: string } | null,
@@ -104,25 +151,10 @@ export async function createMonobankInvoice(
   if (!env.webhookUrl) throw new Error('Missing WEBHOOK_URL');
   if (amount <= 0) throw new Error('Amount must be greater than 0');
 
-  const customer = body.customer || {};
-  const customerName = `${asString(customer.first_name)} ${asString(customer.last_name)}`.trim() || 'Customer';
-  const customerPhone = asString(customer.phone);
   const reference = shopifyOrder?.id
     ? `shopify-${shopifyOrder.id}-${Date.now()}`
     : createCheckoutReference();
-  const requestBody = {
-    amount: Math.round(amount * 100),
-    ccy: 980,
-    merchantPaymInfo: {
-      reference,
-      destination: shopifyOrder?.name
-        ? `Order ${shopifyOrder.name}: ${customerName}${customerPhone ? ` (${customerPhone})` : ''}`
-        : `Themate checkout: ${customerName}${customerPhone ? ` (${customerPhone})` : ''}`,
-      basketOrder: buildMonobankBasketOrder(body, amount),
-    },
-    redirectUrl: env.redirectUrl,
-    webHookUrl: env.webhookUrl,
-  };
+  const requestBody = buildMonobankInvoiceRequestBody(body, shopifyOrder, amount, reference);
 
   console.log('Creating monobank invoice:', {
     amount: requestBody.amount,

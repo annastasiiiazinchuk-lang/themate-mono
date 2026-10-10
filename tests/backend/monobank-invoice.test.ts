@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { buildMonobankBasketOrder } from '../../lib/services/monobank/monobank-invoice';
+import {
+  buildMonobankBasketOrder,
+  buildMonobankInvoiceRequestBody,
+  getMonobankCustomerEmails,
+} from '../../lib/services/monobank/monobank-invoice';
 import type { CheckoutPayload } from '../../lib/types/checkout';
 
 const basePayload: CheckoutPayload = {
@@ -79,5 +83,19 @@ describe('Monobank invoice payload', () => {
       sum: 99900,
       total: 99900,
     });
+  });
+
+  test('passes checkout email to Monobank receipt emails', () => {
+    expect(getMonobankCustomerEmails(basePayload)).toEqual(['test@example.com']);
+
+    const requestBody = buildMonobankInvoiceRequestBody(
+      basePayload,
+      null,
+      1300,
+      'checkout-test-reference',
+    );
+
+    expect(requestBody.merchantPaymInfo.customerEmails).toEqual(['test@example.com']);
+    expect(requestBody.merchantPaymInfo.comment).toBe(requestBody.merchantPaymInfo.destination);
   });
 });

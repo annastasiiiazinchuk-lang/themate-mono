@@ -580,7 +580,7 @@ export function buildShopifyOrderPayload(
     currency: 'UAH',
     tax_exempt: true,
     taxes_included: false,
-    send_receipt: false,
+    send_receipt: true,
     send_fulfillment_receipt: false,
     inventory_behaviour: 'decrement_obeying_policy',
     note: orderNote,
