@@ -89,5 +89,11 @@ describe('Meta Conversions API purchase payload', () => {
     expect(event.event_id).toBe('mono_shopify-7281102553280');
     expect(customData.value).toBe(2590);
     expect(customData.order_id).toBe('#2001');
+
+    const testPayload = buildMetaPurchasePayload(payment, webhookBody, ' TEST123 ');
+    expect(testPayload.test_event_code).toBe('TEST123');
+
+    const productionPayload = buildMetaPurchasePayload(payment, webhookBody, ' ');
+    expect(productionPayload).not.toHaveProperty('test_event_code');
   });
 });

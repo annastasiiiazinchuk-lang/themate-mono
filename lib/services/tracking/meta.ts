@@ -5,6 +5,7 @@ import { asNumber, asString, sha256 } from "../../utils/format";
 
 type MetaPurchasePayload = {
   data: Array<Record<string, unknown>>;
+  test_event_code?: string;
 };
 
 function compactRecord(record: Record<string, unknown>): Record<string, unknown> {
@@ -27,6 +28,7 @@ export function normalizeMetaPhone(value: unknown): string {
 export function buildMetaPurchasePayload(
   payment: StoredPaymentMetadata,
   webhookBody: MonobankWebhookBody,
+  testEventCode = env.metaTestEventCode,
 ): MetaPurchasePayload {
   const customer = payment.customer || {};
   const tracking = payment.tracking || {};
@@ -44,7 +46,7 @@ export function buildMetaPurchasePayload(
     item_price: Number(item.price || 0),
   }));
 
-  const payload = {
+  const payload: MetaPurchasePayload = {
     data: [
       compactRecord({
         event_name: "Purchase",
@@ -80,6 +82,9 @@ export function buildMetaPurchasePayload(
       }),
     ],
   };
+
+  const normalizedTestEventCode = asString(testEventCode).trim();
+  if (normalizedTestEventCode) payload.test_event_code = normalizedTestEventCode;
 
   return payload;
 }

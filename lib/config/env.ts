@@ -36,6 +36,7 @@ export const env = {
   metaPixelId: process.env.META_PIXEL_ID || '',
   metaAccessToken: process.env.META_ACCESS_TOKEN || '',
   metaGraphVersion: process.env.META_GRAPH_VERSION || 'v23.0',
+  metaTestEventCode: process.env.META_TEST_EVENT_CODE || '',
   ga4MeasurementId: process.env.GA4_MEASUREMENT_ID || '',
   ga4ApiSecret: process.env.GA4_API_SECRET || '',
   googleAdsApiVersion: process.env.GOOGLE_ADS_API_VERSION || 'v22',
