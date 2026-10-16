@@ -257,6 +257,7 @@ function buildLegacyUtmValue(body: CheckoutPayload): string {
     ['wbraid', ['wbraid']],
     ['ttclid', ['ttclid']],
     ['msclkid', ['msclkid']],
+    ['traffic_source', ['traffic_source']],
     ['_fbc', ['_fbc', 'fbc']],
     ['_fbp', ['_fbp', 'fbp']],
     ['utm_lang', ['utm_lang']],

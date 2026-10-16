@@ -928,6 +928,37 @@
     return tracking;
   }
 
+  function trackingSourceLabel(tracking) {
+    const text = `${tracking.traffic_source || ''} ${tracking.utm_source || ''} ${tracking.referrer || ''}`
+      .toLocaleLowerCase('uk-UA');
+    if (/instagram|(^|\W)ig($|\W)/i.test(text)) return 'Instagram';
+    if (/facebook|(^|\W)fb($|\W)/i.test(text) || tracking.fbclid || tracking.fbc) return 'Facebook';
+    if (/google/i.test(text) || tracking.gclid || tracking.gbraid || tracking.wbraid) return 'Google';
+    if (/tiktok|(^|\W)tt($|\W)/i.test(text) || tracking.ttclid) return 'TikTok';
+    const source = String(tracking.utm_source || '').trim();
+    return source && !/^[\d\s._-]+$/.test(source) && source.length <= 120 ? source : '';
+  }
+
+  function buildTrackingComment(tracking) {
+    const source = trackingSourceLabel(tracking);
+    const fields = [
+      ['UTM source', tracking.utm_source],
+      ['UTM medium', tracking.utm_medium],
+      ['UTM campaign', tracking.utm_campaign],
+      ['UTM content', tracking.utm_content],
+      ['UTM term', tracking.utm_term],
+    ];
+    const lines = fields
+      .map(([label, value]) => {
+        const text = String(value || '').trim();
+        return text && text.length <= 120 ? `${label}: ${text}` : '';
+      })
+      .filter(Boolean);
+
+    if (source) lines.unshift(source);
+    return lines.length ? ['ЗВІДКИ КЛІЄНТ', ...lines].join('\n') : '';
+  }
+
   function getEventId(eventName) {
     return `${eventName}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   }
@@ -2374,6 +2405,11 @@
     const paymentType = getPaymentType();
     const npDeliveryType = getNpDeliveryType();
     const shippingPrice = getShippingPrice();
+    const tracking = collectTrackingData();
+    const trackingComment = buildTrackingComment(tracking);
+    const comment = [String(formData.get('comment') || '').trim(), trackingComment]
+      .filter(Boolean)
+      .join('\n');
 
     return {
       locale: CURRENT_LOCALE,
@@ -2420,10 +2456,10 @@
         quantity: item.quantity,
         properties: getVisibleItemProperties(item),
       })),
-      comment: String(formData.get('comment') || '').trim(),
+      comment,
       personal_data_consent: formData.get('personal_data_consent') === 'on',
-      tracking: collectTrackingData(),
-      utm: collectTrackingData(),
+      tracking,
+      utm: tracking,
     };
   }
 

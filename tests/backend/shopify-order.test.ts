@@ -136,6 +136,7 @@ describe('Shopify order mapping', () => {
         utm_term: 'midi',
         utm_lang: 'uk',
         utm_id: 'campaign-123',
+        traffic_source: 'Instagram',
         fbclid: 'fb-click-id',
         fbc: 'fb.1.17887050587983.fb-click-id',
         fbp: 'fb.1.17887050546561.847850575329279795',
@@ -156,6 +157,7 @@ describe('Shopify order mapping', () => {
     expect(utmAttribute?.value).toContain('_fbp: fb.1.17887050546561.847850575329279795');
     expect(utmAttribute?.value).toContain('utm_lang: uk');
     expect(utmAttribute?.value).toContain('utm_id: campaign-123');
+    expect(utmAttribute?.value).toContain('traffic_source: Instagram');
   });
 
   test('custom checkout orders do not add Shopify taxes', () => {
