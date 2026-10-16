@@ -2480,61 +2480,7 @@ document.addEventListener('DOMContentLoaded', function () {
     container.style.display = 'block';
   }
 
-  function fetchJsonp(url, requestId) {
-    return new Promise((resolve, reject) => {
-      const callbackName = `npCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const script = document.createElement('script');
-      const requestUrl = new URL(url);
-      requestUrl.searchParams.set('callback', callbackName);
-      if (requestId) requestUrl.searchParams.set('rid', requestId);
-      let isDone = false;
-      debugLog('jsonp_start', requestId, callbackName, requestUrl.pathname);
-
-      const cleanup = () => {
-        delete window[callbackName];
-        script.remove();
-      };
-
-      window[callbackName] = (data) => {
-        if (isDone) return;
-        isDone = true;
-        clearTimeout(timeoutId);
-        debugLog('jsonp_callback', requestId, `keys:${Object.keys(data || {}).join(',')}`, '');
-        cleanup();
-        if (data && data.error) {
-          reject(new Error(data.details || data.error));
-          return;
-        }
-        resolve(data || {});
-      };
-
-      script.onerror = () => {
-        if (isDone) return;
-        isDone = true;
-        clearTimeout(timeoutId);
-        debugLog('jsonp_error', requestId, 'script.onerror', requestUrl.toString());
-        cleanup();
-        reject(new Error(t('requestFailed')));
-      };
-
-      script.onload = () => {
-        debugLog('jsonp_load', requestId, isDone ? 'loaded_after_callback' : 'loaded_without_callback', callbackName);
-      };
-
-      const timeoutId = setTimeout(() => {
-        if (isDone) return;
-        isDone = true;
-        debugLog('jsonp_timeout', requestId, callbackName, requestUrl.toString());
-        cleanup();
-        reject(new Error(t('npTimeout')));
-      }, 12000);
-
-      script.src = requestUrl.toString();
-      document.head.appendChild(script);
-    });
-  }
-
-  async function fetchJsonWithTimeout(url, timeoutMs = 5000, requestId = '') {
+  async function fetchJsonWithTimeout(url, timeoutMs = 10000, requestId = '', timeoutMessage = '') {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = setTimeout(() => {
       if (controller) controller.abort();
@@ -2542,12 +2488,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     try {
       debugLog('fetch_start', requestId, url, '');
-      const response = await fetch(url, {
+      const requestUrl = new URL(url, window.location.href);
+      const headers = { Accept: 'application/json' };
+      if (requestUrl.hostname.includes('ngrok')) headers['ngrok-skip-browser-warning'] = 'true';
+      const response = await fetch(requestUrl.toString(), {
         signal: controller ? controller.signal : undefined,
-        headers: {
-          Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers,
       });
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
@@ -2555,8 +2501,11 @@ document.addEventListener('DOMContentLoaded', function () {
       debugLog('fetch_success', requestId, `status:${response.status}`, `keys:${Object.keys(data || {}).join(',')}`);
       return data;
     } catch (error) {
-      debugLog('fetch_error', requestId, error instanceof Error ? error.message : String(error), '');
-      throw error;
+      const requestError = error && error.name === 'AbortError'
+        ? new Error(timeoutMessage || t('requestFailed'))
+        : error;
+      debugLog('fetch_error', requestId, requestError instanceof Error ? requestError.message : String(requestError), '');
+      throw requestError;
     } finally {
       clearTimeout(timeoutId);
     }
@@ -2564,21 +2513,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function fetchJson(url, requestId = '') {
     if (url.includes('/api/np/')) {
-      try {
-        return await fetchJsonWithTimeout(url, 5000, requestId);
-      } catch (error) {
-        console.warn('Nova Poshta fetch failed, trying JSONP fallback:', error);
-        showDebugStatus(`fetch failed, trying jsonp: ${error instanceof Error ? error.message : String(error)}`);
-        debugLog('fallback_to_jsonp', requestId, error instanceof Error ? error.message : String(error), '');
-        try {
-          return await fetchJsonp(url, requestId);
-        } catch (jsonpError) {
-          const fetchMessage = error instanceof Error ? error.message : String(error);
-          const jsonpMessage = jsonpError instanceof Error ? jsonpError.message : String(jsonpError);
-          showDebugStatus(`both failed: fetch ${fetchMessage}; jsonp ${jsonpMessage}`);
-          throw new Error(`fetch: ${fetchMessage}; jsonp: ${jsonpMessage}`);
-        }
-      }
+      return fetchJsonWithTimeout(url, 6500, requestId, t('npTimeout'));
     }
 
     return fetchJsonWithTimeout(url, 10000, requestId);
@@ -2704,7 +2639,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (npCityInput.value.trim() === query && !selectedCityRef) {
             renderSuggestionMessage(citySuggestions, t('citiesPhoneError'));
           }
-        }, 6500);
+        }, 7000);
 
         try {
           const popularMatches = findPopularCityMatches(query);
@@ -2808,7 +2743,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (selectedCityRef === cityRef && npWarehouseInput.value.trim() === query && !selectedWarehouseRef) {
             renderSuggestionMessage(warehouseSuggestions, t('warehousesPhoneError'));
           }
-        }, 6500);
+        }, 7000);
 
         try {
           const warehouses = await searchWarehouses(query);

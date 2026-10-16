@@ -2,10 +2,11 @@ import { env } from '../../config/env';
 import { normalizeSearchText } from '../../utils/format';
 import { isParcelLocker } from '../../utils/delivery';
 
-const NOVA_POSHTA_TIMEOUT_MS = 12000;
+const NOVA_POSHTA_TIMEOUT_MS = 8000;
 const NOVA_POSHTA_CACHE_TTL_MS = 30 * 60 * 1000;
 
 const cache = new Map<string, { data: unknown[]; createdAt: number }>();
+const pendingRequests = new Map<string, Promise<unknown[]>>();
 
 export const POPULAR_NP_CITIES = [
   { ref: '8d5a980d-391c-11dd-90d9-001a92567626', name: 'Київ', area: 'Київська', settlementType: 'місто' },
@@ -35,26 +36,40 @@ async function novaPoshtaRequest(modelName: string, calledMethod: string, method
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), NOVA_POSHTA_TIMEOUT_MS);
 
-  const response = await fetch('https://api.novaposhta.ua/v2.0/json/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    signal: controller.signal,
-    body: JSON.stringify({
-      apiKey: env.novaPoshtaApiKey,
-      modelName,
-      calledMethod,
-      methodProperties,
-    }),
-  }).finally(() => clearTimeout(timeoutId));
+  try {
+    const response = await fetch('https://api.novaposhta.ua/v2.0/json/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        apiKey: env.novaPoshtaApiKey,
+        modelName,
+        calledMethod,
+        methodProperties,
+      }),
+    });
+    const text = await response.text();
+    let data: Record<string, unknown>;
+    try {
+      data = text ? JSON.parse(text) as Record<string, unknown> : {};
+    } catch {
+      throw new Error(`Nova Poshta returned invalid JSON (HTTP ${response.status})`);
+    }
+    if (!response.ok || data.success === false) {
+      const errors = Array.isArray(data.errors) ? data.errors : [];
+      const message = errors.length > 0 ? errors.join('; ') : text || response.statusText;
+      throw new Error(`Nova Poshta error (HTTP ${response.status}): ${message}`);
+    }
 
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-  if (!response.ok || data.success === false) {
-    const message = Array.isArray(data.errors) && data.errors.length > 0 ? data.errors.join('; ') : text;
-    throw new Error(`Nova Poshta error: ${message}`);
+    return (data.data || []) as unknown[];
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Nova Poshta request timed out after ${NOVA_POSHTA_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return (data.data || []) as unknown[];
 }
 
 async function cachedNovaPoshtaRequest(
@@ -63,25 +78,35 @@ async function cachedNovaPoshtaRequest(
   calledMethod: string,
   methodProperties: Record<string, unknown>,
 ): Promise<unknown[]> {
-  const cached = cache.get(cacheKey);
+  const normalizedCacheKey = cacheKey.trim().toLocaleLowerCase('uk-UA');
+  const cached = cache.get(normalizedCacheKey);
   if (cached && Date.now() - cached.createdAt < NOVA_POSHTA_CACHE_TTL_MS) {
-    console.log(`Nova Poshta cache hit: ${cacheKey}`);
+    console.log(`Nova Poshta cache hit: ${normalizedCacheKey}`);
     return cached.data;
   }
 
+  const pending = pendingRequests.get(normalizedCacheKey);
+  if (pending) return pending;
+
   const startedAt = Date.now();
-  try {
-    const data = await novaPoshtaRequest(modelName, calledMethod, methodProperties);
-    cache.set(cacheKey, { data, createdAt: Date.now() });
-    console.log(`Nova Poshta loaded: ${cacheKey} in ${Date.now() - startedAt}ms`);
-    return data;
-  } catch (error) {
-    if (cached) {
-      console.warn(`Nova Poshta timeout/error, returning stale cache for ${cacheKey}:`, error);
-      return cached.data;
+  const request = (async () => {
+    try {
+      const data = await novaPoshtaRequest(modelName, calledMethod, methodProperties);
+      cache.set(normalizedCacheKey, { data, createdAt: Date.now() });
+      console.log(`Nova Poshta loaded: ${normalizedCacheKey} in ${Date.now() - startedAt}ms`);
+      return data;
+    } catch (error) {
+      if (cached) {
+        console.warn(`Nova Poshta timeout/error, returning stale cache for ${normalizedCacheKey}:`, error);
+        return cached.data;
+      }
+      throw error;
+    } finally {
+      pendingRequests.delete(normalizedCacheKey);
     }
-    throw error;
-  }
+  })();
+  pendingRequests.set(normalizedCacheKey, request);
+  return request;
 }
 
 export async function searchCities(queryValue: unknown) {

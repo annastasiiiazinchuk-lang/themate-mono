@@ -46,4 +46,31 @@ describe('Nova Poshta helpers', () => {
       env.novaPoshtaApiKey = apiKey;
     }
   });
+
+  test('shares concurrent warehouse lookups for the same city and query', async () => {
+    const apiKey = env.novaPoshtaApiKey;
+    env.novaPoshtaApiKey = 'test-key';
+    let requestCount = 0;
+    const fetchMock = spyOn(globalThis, 'fetch').mockImplementation((async () => {
+      requestCount += 1;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return new Response(JSON.stringify({
+        success: true,
+        data: [{ Ref: 'branch-88', Description: 'Відділення №88', Number: '88' }],
+      }));
+    }) as unknown as typeof fetch);
+    try {
+      const params = { cityRef: 'concurrent-lookup-test-city', query: '88' };
+      const [first, second] = await Promise.all([
+        searchWarehouses(params),
+        searchWarehouses(params),
+      ]);
+
+      expect(first).toEqual(second);
+      expect(requestCount).toBe(1);
+    } finally {
+      fetchMock.mockRestore();
+      env.novaPoshtaApiKey = apiKey;
+    }
+  });
 });
