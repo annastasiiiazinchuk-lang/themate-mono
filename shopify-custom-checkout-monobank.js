@@ -2,7 +2,7 @@
   const API_BASE_URL = 'https://themate-mono.onrender.com';
   const PREPAYMENT_AMOUNT = 300;
   const INTERNATIONAL_DELIVERY_FEE = 0;
-  const SCRIPT_VERSION = 'themate-2026-09-21-google-ads-attribution';
+  const SCRIPT_VERSION = 'themate-2026-10-14-no-parcel-lockers';
   const SHOPIFY_ROUTES_ROOT = window.Shopify?.routes?.root || '/';
   const UPSELL_PRODUCTS = window.THEMATE_UPSELL_PRODUCTS || [
     // {
@@ -66,12 +66,10 @@
       novaPoshta: 'Нова пошта',
       internationalDelivery: 'Доставка за кордон',
       branch: 'Відділення',
-      postomat: 'Поштомат',
       address: 'Адреса',
       cityNovaPoshta: 'Місто (Нова Пошта)',
       chooseCity: 'Оберіть місто *',
       chooseBranch: 'Оберіть відділення *',
-      choosePostomat: 'Оберіть поштомат *',
       courierAddressNote: "Кур'єрська доставка Нової пошти на адресу",
       deliveryAddress: 'Адреса доставки',
       street: 'Вулиця *',
@@ -148,12 +146,10 @@
       novaPoshta: 'Nova Poshta',
       internationalDelivery: 'International delivery',
       branch: 'Branch',
-      postomat: 'Parcel locker',
       address: 'Address',
       cityNovaPoshta: 'City (Nova Poshta)',
       chooseCity: 'Choose city *',
       chooseBranch: 'Choose branch *',
-      choosePostomat: 'Choose parcel locker *',
       courierAddressNote: 'Nova Poshta courier delivery to your address',
       deliveryAddress: 'Delivery address',
       street: 'Street *',
@@ -230,12 +226,10 @@
       novaPoshta: 'Nova Poshta',
       internationalDelivery: 'Dostawa za granicę',
       branch: 'Oddział',
-      postomat: 'Paczkomat',
       address: 'Adres',
       cityNovaPoshta: 'Miasto (Nova Poshta)',
       chooseCity: 'Wybierz miasto *',
       chooseBranch: 'Wybierz oddział *',
-      choosePostomat: 'Wybierz paczkomat *',
       courierAddressNote: 'Dostawa kurierska Nova Poshta pod wskazany adres',
       deliveryAddress: 'Adres dostawy',
       street: 'Ulica *',
@@ -1239,7 +1233,7 @@
       }
       .np-type-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin-bottom: 18px;
       }
@@ -1320,7 +1314,6 @@
       domesticWrap.innerHTML = `
         <div class="np-type-grid">
           <label class="np-type-card"><input type="radio" name="np_delivery_type" value="branch" checked>${t('branch')}</label>
-          <label class="np-type-card"><input type="radio" name="np_delivery_type" value="postomat">${t('postomat')}</label>
           <label class="np-type-card"><input type="radio" name="np_delivery_type" value="address">${t('address')}</label>
         </div>
 
@@ -1425,8 +1418,12 @@
     return form.querySelector('input[name="payment_type"]:checked')?.value || 'full';
   }
 
+  function isParcelLocker(value) {
+    return /поштомат|почтомат|postomat|parcel\s*locker|paczkomat/i.test(String(value || ''));
+  }
+
   function getNpDeliveryType() {
-    return form.querySelector('input[name="np_delivery_type"]:checked')?.value || 'branch';
+    return form.querySelector('input[name="np_delivery_type"]:checked')?.value === 'address' ? 'address' : 'branch';
   }
 
   function getShippingType() {
@@ -1446,7 +1443,6 @@
     const isInternational = shippingType === 'international';
     const npDeliveryType = getNpDeliveryType();
     const isAddressDelivery = npDeliveryType === 'address';
-    const isPostomatDelivery = npDeliveryType === 'postomat';
     const intlCountry = document.querySelector('#intl-country');
     const intlCity = document.querySelector('#intl-city');
     const intlAddress = document.querySelector('#intl-address');
@@ -1475,10 +1471,10 @@
     if (npAddressFields) npAddressFields.hidden = isInternational || !isAddressDelivery;
 
     if (npWarehouseLabel) {
-      npWarehouseLabel.textContent = isPostomatDelivery ? t('postomat') : t('branch');
+      npWarehouseLabel.textContent = t('branch');
     }
     if (npWarehouseInput) {
-      npWarehouseInput.placeholder = isPostomatDelivery ? t('choosePostomat') : t('chooseBranch');
+      npWarehouseInput.placeholder = t('chooseBranch');
       npWarehouseInput.required = !isInternational && !isAddressDelivery;
       npWarehouseInput.disabled = isInternational || isAddressDelivery || !npCityInput?.value.trim();
       if (isAddressDelivery) npWarehouseInput.value = '';
@@ -1661,7 +1657,9 @@
       });
 
       setCheckoutDraftFieldValue('shipping_type', data.shipping_type || 'ukraine');
-      setCheckoutDraftFieldValue('np_delivery_type', data.np_delivery_type || 'branch');
+      const removedPickup = data.np_delivery_type === 'postomat' || isParcelLocker(data.warehouse);
+      setCheckoutDraftFieldValue('np_delivery_type', data.np_delivery_type === 'address' ? 'address' : 'branch');
+      if (removedPickup) setCheckoutDraftFieldValue('warehouse', '');
       setCheckoutDraftFieldValue('personal_data_consent', Boolean(data.personal_data_consent));
 
       if (data.installments_parts_count) {
@@ -1669,7 +1667,7 @@
       }
 
       selectedCityRef = data.selected_city_ref || '';
-      selectedWarehouseRef = data.selected_warehouse_ref || '';
+      selectedWarehouseRef = removedPickup ? '' : data.selected_warehouse_ref || '';
 
       if (data.payment_type && !selectPaymentType(data.payment_type)) {
         selectPaymentType('full');
@@ -2119,19 +2117,9 @@
     const warehouses = data.warehouses || [];
     showDebugStatus(`warehouses success: count ${warehouses.length}`);
     debugLog('warehouses_search_success', requestId, params.toString(), `count:${warehouses.length}`);
-    const npDeliveryType = getNpDeliveryType();
-    if (npDeliveryType === 'postomat') {
-      const filtered = warehouses.filter((warehouse) => String(warehouse.name || '').toLowerCase().includes('поштомат'));
-      warehouseSearchCache.set(cacheKey, filtered);
-      return filtered;
-    }
-    if (npDeliveryType === 'branch') {
-      const filtered = warehouses.filter((warehouse) => !String(warehouse.name || '').toLowerCase().includes('поштомат'));
-      warehouseSearchCache.set(cacheKey, filtered);
-      return filtered;
-    }
-    warehouseSearchCache.set(cacheKey, warehouses);
-    return warehouses;
+    const branches = warehouses.filter((warehouse) => !isParcelLocker(warehouse.name));
+    warehouseSearchCache.set(cacheKey, branches);
+    return branches;
   }
 
   function setupNovaPoshtaAutocomplete() {
@@ -2344,7 +2332,7 @@
     const formData = new FormData(form);
     const shippingType = String(formData.get('shipping_type') || 'ukraine');
     const paymentType = getPaymentType();
-    const npDeliveryType = String(formData.get('np_delivery_type') || 'branch');
+    const npDeliveryType = getNpDeliveryType();
     const shippingPrice = getShippingPrice();
 
     return {

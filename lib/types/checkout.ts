@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isParcelLocker, PARCEL_LOCKER_UNAVAILABLE_MESSAGE } from '../utils/delivery';
 
 const stringish = z.union([z.string(), z.number()]).optional();
 const requiredEmail = z.string().trim()
@@ -53,6 +54,19 @@ export const checkoutPayloadSchema = z.object({
   personal_data_consent: z.boolean().optional(),
   tracking: z.record(z.unknown()).optional(),
   utm: z.record(z.unknown()).optional(),
+}).superRefine((body, context) => {
+  if (body.shipping_type === 'international' || body.shipping.type === 'international') return;
+
+  if (
+    body.shipping.delivery_method === 'postomat'
+    || (body.shipping.delivery_method !== 'address' && isParcelLocker(body.shipping.warehouse))
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shipping', 'delivery_method'],
+      message: PARCEL_LOCKER_UNAVAILABLE_MESSAGE,
+    });
+  }
 });
 
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;

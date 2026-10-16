@@ -1,5 +1,6 @@
 import { env } from '../../config/env';
 import { normalizeSearchText } from '../../utils/format';
+import { isParcelLocker } from '../../utils/delivery';
 
 const NOVA_POSHTA_TIMEOUT_MS = 12000;
 const NOVA_POSHTA_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -115,7 +116,10 @@ export async function searchWarehouses(params: { city?: string; cityRef?: string
     },
   );
 
-  return warehouses.map((warehouse) => {
+  return warehouses.filter((warehouse) => {
+    const item = warehouse as Record<string, unknown>;
+    return ![item.CategoryOfWarehouse, item.Description, item.DescriptionRu].some(isParcelLocker);
+  }).map((warehouse) => {
     const item = warehouse as Record<string, unknown>;
     return {
       ref: String(item.Ref || ''),
