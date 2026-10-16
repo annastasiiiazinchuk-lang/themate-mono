@@ -70,6 +70,9 @@
       cityNovaPoshta: 'Місто (Нова Пошта)',
       chooseCity: 'Оберіть місто *',
       chooseBranch: 'Оберіть відділення *',
+      chooseCityFromList: 'Оберіть населений пункт саме зі списку Нової пошти.',
+      chooseBranchFromList: 'Оберіть відділення саме зі списку Нової пошти.',
+      typeBranchToSearch: 'Введіть номер або назву відділення.',
       courierAddressNote: "Кур'єрська доставка Нової пошти на адресу",
       deliveryAddress: 'Адреса доставки',
       street: 'Вулиця *',
@@ -150,6 +153,9 @@
       cityNovaPoshta: 'City (Nova Poshta)',
       chooseCity: 'Choose city *',
       chooseBranch: 'Choose branch *',
+      chooseCityFromList: 'Select a settlement from the Nova Poshta list.',
+      chooseBranchFromList: 'Select a branch from the Nova Poshta list.',
+      typeBranchToSearch: 'Enter a branch number or name.',
       courierAddressNote: 'Nova Poshta courier delivery to your address',
       deliveryAddress: 'Delivery address',
       street: 'Street *',
@@ -230,6 +236,9 @@
       cityNovaPoshta: 'Miasto (Nova Poshta)',
       chooseCity: 'Wybierz miasto *',
       chooseBranch: 'Wybierz oddział *',
+      chooseCityFromList: 'Wybierz miejscowość z listy Nova Poshta.',
+      chooseBranchFromList: 'Wybierz oddział z listy Nova Poshta.',
+      typeBranchToSearch: 'Wpisz numer lub nazwę oddziału.',
       courierAddressNote: 'Dostawa kurierska Nova Poshta pod wskazany adres',
       deliveryAddress: 'Adres dostawy',
       street: 'Ulica *',
@@ -1426,6 +1435,20 @@
     return form.querySelector('input[name="np_delivery_type"]:checked')?.value === 'address' ? 'address' : 'branch';
   }
 
+  function syncNovaPoshtaCustomValidity() {
+    const isDomestic = getShippingType() !== 'international';
+    const isBranchDelivery = getNpDeliveryType() === 'branch';
+    if (npCityInput) {
+      npCityInput.setCustomValidity(isDomestic && !selectedCityRef ? t('chooseCityFromList') : '');
+    }
+    if (npWarehouseInput) {
+      const hasSelectedBranch = Boolean(selectedWarehouseRef && npWarehouseInput.value.trim());
+      npWarehouseInput.setCustomValidity(isDomestic && isBranchDelivery && !hasSelectedBranch
+        ? t('chooseBranchFromList')
+        : '');
+    }
+  }
+
   function getShippingType() {
     return form.querySelector('input[name="shipping_type"]:checked')?.value || 'ukraine';
   }
@@ -1476,7 +1499,7 @@
     if (npWarehouseInput) {
       npWarehouseInput.placeholder = t('chooseBranch');
       npWarehouseInput.required = !isInternational && !isAddressDelivery;
-      npWarehouseInput.disabled = isInternational || isAddressDelivery || !npCityInput?.value.trim();
+      npWarehouseInput.disabled = isInternational || isAddressDelivery || !selectedCityRef;
       if (isAddressDelivery) npWarehouseInput.value = '';
     }
     if (npCityInput) {
@@ -1498,6 +1521,7 @@
     });
     if (intlApartment) intlApartment.disabled = !isInternational;
 
+    syncNovaPoshtaCustomValidity();
     setPaymentAmount();
     syncFullPaymentBadgeVisibility();
   }
@@ -2182,7 +2206,9 @@
       renderSuggestionMessage(citySuggestions, t('searchingCities'));
       citySearchTimer = setTimeout(async function () {
         const uiTimeoutId = setTimeout(() => {
-          renderSuggestionMessage(citySuggestions, t('citiesPhoneError'));
+          if (npCityInput.value.trim() === query && !selectedCityRef) {
+            renderSuggestionMessage(citySuggestions, t('citiesPhoneError'));
+          }
         }, 6500);
 
         try {
@@ -2225,6 +2251,7 @@
 
           const cities = await searchCities(query);
           clearTimeout(uiTimeoutId);
+          if (npCityInput.value.trim() !== query || selectedCityRef) return;
           if (!cities.length) {
             renderSuggestionMessage(citySuggestions, t('cityNotFound'));
             return;
@@ -2249,6 +2276,7 @@
           );
         } catch (error) {
           clearTimeout(uiTimeoutId);
+          if (npCityInput.value.trim() !== query || selectedCityRef) return;
           console.error(error);
           renderSuggestionMessage(
             citySuggestions,
@@ -2267,21 +2295,30 @@
 
       const query = npWarehouseInput.value.trim();
       selectedWarehouseRef = '';
+      const cityRef = selectedCityRef;
       clearTimeout(warehouseSearchTimer);
-      if (!selectedCityRef && !npCityInput.value.trim()) {
-        hideSuggestions(warehouseSuggestions);
+      if (!cityRef) {
+        renderSuggestionMessage(warehouseSuggestions, t('chooseCityFromList'));
+        return;
+      }
+      if (!query) {
+        renderSuggestionMessage(warehouseSuggestions, t('typeBranchToSearch'));
         return;
       }
 
       renderSuggestionMessage(warehouseSuggestions, t('searchingWarehouses'));
       warehouseSearchTimer = setTimeout(async function () {
+        if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query) return;
         const uiTimeoutId = setTimeout(() => {
-          renderSuggestionMessage(warehouseSuggestions, t('warehousesPhoneError'));
+          if (selectedCityRef === cityRef && npWarehouseInput.value.trim() === query && !selectedWarehouseRef) {
+            renderSuggestionMessage(warehouseSuggestions, t('warehousesPhoneError'));
+          }
         }, 6500);
 
         try {
           const warehouses = await searchWarehouses(query);
           clearTimeout(uiTimeoutId);
+          if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query || selectedWarehouseRef) return;
           if (!warehouses.length) {
             renderSuggestionMessage(warehouseSuggestions, t('warehouseNotFound'));
             return;
@@ -2296,10 +2333,13 @@
             function (warehouse) {
               npWarehouseInput.value = warehouse.value;
               selectedWarehouseRef = warehouse.ref || '';
+              syncDeliveryVisibility();
+              saveCheckoutDraft();
             },
           );
         } catch (error) {
           clearTimeout(uiTimeoutId);
+          if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query || selectedWarehouseRef) return;
           console.error(error);
           renderSuggestionMessage(
             warehouseSuggestions,
@@ -2472,6 +2512,7 @@
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
 
+    syncNovaPoshtaCustomValidity();
     if (!form.reportValidity()) return;
     if (!cart) await loadCart();
     if (!cart || cart.item_count === 0) {

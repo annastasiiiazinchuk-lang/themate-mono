@@ -16,7 +16,9 @@ const basePayload = {
     type: 'ukraine',
     delivery_method: 'branch',
     city: 'Київ',
+    city_ref: 'city-ref-kyiv',
     warehouse: 'Відділення №12',
+    warehouse_ref: 'warehouse-ref-12',
   },
   goods: [
     {

@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { isParcelLocker, PARCEL_LOCKER_UNAVAILABLE_MESSAGE } from '../utils/delivery';
+import {
+  isParcelLocker,
+  NOVA_POSHTA_BRANCH_REQUIRED_MESSAGE,
+  NOVA_POSHTA_CITY_REQUIRED_MESSAGE,
+  NOVA_POSHTA_HOUSE_REQUIRED_MESSAGE,
+  NOVA_POSHTA_STREET_REQUIRED_MESSAGE,
+  PARCEL_LOCKER_UNAVAILABLE_MESSAGE,
+} from '../utils/delivery';
 
 const stringish = z.union([z.string(), z.number()]).optional();
 const requiredEmail = z.string().trim()
@@ -57,15 +64,29 @@ export const checkoutPayloadSchema = z.object({
 }).superRefine((body, context) => {
   if (body.shipping_type === 'international' || body.shipping.type === 'international') return;
 
-  if (
-    body.shipping.delivery_method === 'postomat'
-    || (body.shipping.delivery_method !== 'address' && isParcelLocker(body.shipping.warehouse))
-  ) {
+  const deliveryMethod = body.shipping.delivery_method || 'branch';
+  const addShippingIssue = (field: string, message: string) => {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['shipping', 'delivery_method'],
-      message: PARCEL_LOCKER_UNAVAILABLE_MESSAGE,
+      path: ['shipping', field],
+      message,
     });
+  };
+
+  if (deliveryMethod === 'postomat' || isParcelLocker(body.shipping.warehouse)) {
+    addShippingIssue('delivery_method', PARCEL_LOCKER_UNAVAILABLE_MESSAGE);
+    return;
+  }
+
+  if (!body.shipping.city?.trim() || !body.shipping.city_ref?.trim()) {
+    addShippingIssue('city_ref', NOVA_POSHTA_CITY_REQUIRED_MESSAGE);
+  }
+
+  if (deliveryMethod === 'address') {
+    if (!body.shipping.street?.trim()) addShippingIssue('street', NOVA_POSHTA_STREET_REQUIRED_MESSAGE);
+    if (!body.shipping.house?.trim()) addShippingIssue('house', NOVA_POSHTA_HOUSE_REQUIRED_MESSAGE);
+  } else if (!body.shipping.warehouse?.trim() || !body.shipping.warehouse_ref?.trim()) {
+    addShippingIssue('warehouse_ref', NOVA_POSHTA_BRANCH_REQUIRED_MESSAGE);
   }
 });
 

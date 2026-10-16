@@ -745,6 +745,9 @@ document.addEventListener('DOMContentLoaded', function () {
       cityNovaPoshta: 'Місто (Нова Пошта)',
       chooseCity: 'Оберіть місто *',
       chooseBranch: 'Оберіть відділення *',
+      chooseCityFromList: 'Оберіть населений пункт саме зі списку Нової пошти.',
+      chooseBranchFromList: 'Оберіть відділення саме зі списку Нової пошти.',
+      typeBranchToSearch: 'Введіть номер або назву відділення.',
       courierAddressNote: "Кур'єрська доставка Нової пошти на адресу",
       deliveryAddress: 'Адреса доставки',
       street: 'Вулиця *',
@@ -818,6 +821,9 @@ document.addEventListener('DOMContentLoaded', function () {
       cityNovaPoshta: 'City (Nova Poshta)',
       chooseCity: 'Choose city *',
       chooseBranch: 'Choose branch *',
+      chooseCityFromList: 'Select a settlement from the Nova Poshta list.',
+      chooseBranchFromList: 'Select a branch from the Nova Poshta list.',
+      typeBranchToSearch: 'Enter a branch number or name.',
       courierAddressNote: 'Nova Poshta courier delivery to your address',
       deliveryAddress: 'Delivery address',
       street: 'Street *',
@@ -1923,6 +1929,20 @@ document.addEventListener('DOMContentLoaded', function () {
     return form.querySelector('input[name="np_delivery_type"]:checked')?.value === 'address' ? 'address' : 'branch';
   }
 
+  function syncNovaPoshtaCustomValidity() {
+    const isDomestic = getShippingType() !== 'international';
+    const isBranchDelivery = getNpDeliveryType() === 'branch';
+    if (npCityInput) {
+      npCityInput.setCustomValidity(isDomestic && !selectedCityRef ? t('chooseCityFromList') : '');
+    }
+    if (npWarehouseInput) {
+      const hasSelectedBranch = Boolean(selectedWarehouseRef && npWarehouseInput.value.trim());
+      npWarehouseInput.setCustomValidity(isDomestic && isBranchDelivery && !hasSelectedBranch
+        ? t('chooseBranchFromList')
+        : '');
+    }
+  }
+
   function getShippingType() {
     return form.querySelector('input[name="shipping_type"]:checked')?.value || 'ukraine';
   }
@@ -1973,7 +1993,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (npWarehouseInput) {
       npWarehouseInput.placeholder = t('chooseBranch');
       npWarehouseInput.required = !isInternational && !isAddressDelivery;
-      npWarehouseInput.disabled = isInternational || isAddressDelivery || !npCityInput?.value.trim();
+      npWarehouseInput.disabled = isInternational || isAddressDelivery || !selectedCityRef;
       if (isAddressDelivery) npWarehouseInput.value = '';
     }
     if (npCityInput) {
@@ -1995,6 +2015,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     if (intlApartment) intlApartment.disabled = !isInternational;
 
+    syncNovaPoshtaCustomValidity();
     setPaymentAmount();
     syncFullPaymentBadgeVisibility();
   }
@@ -2680,7 +2701,9 @@ document.addEventListener('DOMContentLoaded', function () {
       renderSuggestionMessage(citySuggestions, t('searchingCities'));
       citySearchTimer = setTimeout(async function () {
         const uiTimeoutId = setTimeout(() => {
-          renderSuggestionMessage(citySuggestions, t('citiesPhoneError'));
+          if (npCityInput.value.trim() === query && !selectedCityRef) {
+            renderSuggestionMessage(citySuggestions, t('citiesPhoneError'));
+          }
         }, 6500);
 
         try {
@@ -2723,6 +2746,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
           const cities = await searchCities(query);
           clearTimeout(uiTimeoutId);
+          if (npCityInput.value.trim() !== query || selectedCityRef) return;
           if (!cities.length) {
             renderSuggestionMessage(citySuggestions, t('cityNotFound'));
             return;
@@ -2747,6 +2771,7 @@ document.addEventListener('DOMContentLoaded', function () {
           );
         } catch (error) {
           clearTimeout(uiTimeoutId);
+          if (npCityInput.value.trim() !== query || selectedCityRef) return;
           console.error(error);
           renderSuggestionMessage(
             citySuggestions,
@@ -2765,21 +2790,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const query = npWarehouseInput.value.trim();
       selectedWarehouseRef = '';
+      const cityRef = selectedCityRef;
       clearTimeout(warehouseSearchTimer);
-      if (!selectedCityRef && !npCityInput.value.trim()) {
-        hideSuggestions(warehouseSuggestions);
+      if (!cityRef) {
+        renderSuggestionMessage(warehouseSuggestions, t('chooseCityFromList'));
+        return;
+      }
+      if (!query) {
+        renderSuggestionMessage(warehouseSuggestions, t('typeBranchToSearch'));
         return;
       }
 
       renderSuggestionMessage(warehouseSuggestions, t('searchingWarehouses'));
       warehouseSearchTimer = setTimeout(async function () {
+        if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query) return;
         const uiTimeoutId = setTimeout(() => {
-          renderSuggestionMessage(warehouseSuggestions, t('warehousesPhoneError'));
+          if (selectedCityRef === cityRef && npWarehouseInput.value.trim() === query && !selectedWarehouseRef) {
+            renderSuggestionMessage(warehouseSuggestions, t('warehousesPhoneError'));
+          }
         }, 6500);
 
         try {
           const warehouses = await searchWarehouses(query);
           clearTimeout(uiTimeoutId);
+          if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query || selectedWarehouseRef) return;
           if (!warehouses.length) {
             renderSuggestionMessage(warehouseSuggestions, t('warehouseNotFound'));
             return;
@@ -2794,10 +2828,13 @@ document.addEventListener('DOMContentLoaded', function () {
             function (warehouse) {
               npWarehouseInput.value = warehouse.value;
               selectedWarehouseRef = warehouse.ref || '';
+              syncDeliveryVisibility();
+              saveCheckoutDraft();
             },
           );
         } catch (error) {
           clearTimeout(uiTimeoutId);
+          if (selectedCityRef !== cityRef || npWarehouseInput.value.trim() !== query || selectedWarehouseRef) return;
           console.error(error);
           renderSuggestionMessage(
             warehouseSuggestions,
@@ -2971,6 +3008,7 @@ document.addEventListener('DOMContentLoaded', function () {
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
 
+    syncNovaPoshtaCustomValidity();
     if (
       typeof window.themateValidateRequiredCheckoutEmail === 'function'
       && !window.themateValidateRequiredCheckoutEmail()
