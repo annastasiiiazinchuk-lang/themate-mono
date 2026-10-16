@@ -63,4 +63,31 @@ describe('Meta Conversions API purchase payload', () => {
     expect(customData.order_id).toBe('#1486');
     expect(customData.content_ids).toEqual(['THEMATE-MIDI-BLK-XL']);
   });
+
+  test('uses cart total for a no-prepayment Shopify order', () => {
+    const payment: StoredPaymentMetadata = {
+      shopifyOrderId: 7281102553280,
+      shopifyOrderName: '#2001',
+      reference: 'shopify-7281102553280',
+      amount: 0,
+      paymentType: 'no_prepayment',
+      customer: { email: 'customer@example.com' },
+      tracking: {},
+      cartTotal: 2590,
+      goods: [{ code: 'DRESS-01', price: 2590, quantity: 1 }],
+    };
+    const webhookBody: MonobankWebhookBody = {
+      invoiceId: 'shopify-7281102553280',
+      status: 'success',
+      amount: 0,
+      finalAmount: 0,
+    };
+
+    const event = buildMetaPurchasePayload(payment, webhookBody).data[0] as Record<string, unknown>;
+    const customData = event.custom_data as Record<string, unknown>;
+
+    expect(event.event_id).toBe('mono_shopify-7281102553280');
+    expect(customData.value).toBe(2590);
+    expect(customData.order_id).toBe('#2001');
+  });
 });

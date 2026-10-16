@@ -13,6 +13,7 @@ import {
   getPaymentAmount,
 } from '../services/shopify/shopify-order';
 import { sendSitniksOrder } from '../services/sitniks/sitniks-order';
+import { sendMetaPurchaseEvent } from '../services/tracking/meta';
 import { checkoutPayloadSchema } from '../types/checkout';
 
 export async function handleCreateInvoice(request: Request): Promise<Response> {
@@ -59,6 +60,27 @@ export async function handleCreateInvoice(request: Request): Promise<Response> {
     const isNoPrepayment = body.payment_type === 'no_prepayment';
     if (isNoPrepayment) {
       const shopifyOrder = await createShopifyOrder(body, amount);
+      const reference = `shopify-${shopifyOrder.id}`;
+      const cartTotal = getCartTotal(body);
+      await sendMetaPurchaseEvent({
+        shopifyOrderId: shopifyOrder.id,
+        shopifyOrderName: shopifyOrder.name,
+        reference,
+        amount,
+        paymentType: body.payment_type,
+        customer: body.customer,
+        tracking: body.tracking,
+        cartTotal,
+        goods: body.goods,
+      }, {
+        invoiceId: reference,
+        status: 'success',
+        amount: 0,
+        finalAmount: 0,
+      }).catch((error) => {
+        console.error('[Meta CAPI] Failed to send no-prepayment Purchase:', error);
+      });
+
       void sendSitniksOrder(body, shopifyOrder).catch((error) => {
         console.error('[Sitniks] Failed to send no-prepayment order:', error);
       });
@@ -66,7 +88,7 @@ export async function handleCreateInvoice(request: Request): Promise<Response> {
       return json({
         invoiceId: '',
         invoiceUrl: '',
-        reference: `shopify-${shopifyOrder.id}`,
+        reference,
         amount,
         paymentType: body.payment_type,
         paymentFlow: 'shopify_order',
